@@ -18,6 +18,8 @@ import java.util.Map;
  *   <fila 1: un digito de color por celda>
  *   ...
  */
+
+
 public class Bandera {
 
     // Factor de escala (cuantas celdas de la base se fusionan en una)
