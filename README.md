@@ -3,9 +3,13 @@
 Taller **Arreglos y Matrices** – Lógica de programación (Java).
 
 ## Equipo
-- Integrantes: _(completar nombres)_
-- Grupos del Mundial asignados: _(completar, ej. B, D, F, G, H, I, L)_
-- Banderas implementadas: Croacia, Qatar, Uruguay, Senegal, Nueva Zelanda, Australia y Países Bajos
+- Integrantes:
+- Jeronimo Arcila Ceballos
+- Emmanuel Rios Molina
+- Jose Estrada
+- 
+## Banderas implementadas:
+- Croacia, Qatar, Uruguay, Senegal, Nueva Zelanda, Australia y Países Bajos
 
 ## Cómo ejecutar
 Desde la carpeta del proyecto (para que encuentre `recursos/`):
