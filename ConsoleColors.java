@@ -6,6 +6,8 @@ public class ConsoleColors {
 
     public static final String RESET = "\033[0m";
 
+    
+
     // Texto
     public static final String RED_BOLD_BRIGHT = "\033[1;91m";
     public static final String GREEN_BOLD_BRIGHT = "\033[1;92m";
