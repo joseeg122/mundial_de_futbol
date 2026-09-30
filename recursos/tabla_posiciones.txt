@@ -1,0 +1,49 @@
+# equipo;grupo;PG;PE;PP;GF;GC;TA;TR
+Mexico;A;0;0;0;0;0;0;0
+Sudafrica;A;0;0;0;0;0;0;0
+Corea del Sur;A;0;0;0;0;0;0;0
+Republica Checa;A;0;0;0;0;0;0;0
+Canada;B;0;0;0;0;0;0;0
+Bosnia y Herzegovina;B;0;0;0;0;0;0;0
+Qatar;B;0;0;0;0;0;0;0
+Suiza;B;0;0;0;0;0;0;0
+Brasil;C;0;0;0;0;0;0;0
+Marruecos;C;0;0;0;0;0;0;0
+Haiti;C;0;0;0;0;0;0;0
+Escocia;C;0;0;0;0;0;0;0
+Estados Unidos;D;0;0;0;0;0;0;0
+Paraguay;D;0;0;0;0;0;0;0
+Australia;D;0;0;0;0;0;0;0
+Turquia;D;0;0;0;0;0;0;0
+Alemania;E;0;0;0;0;0;0;0
+Curazao;E;0;0;0;0;0;0;0
+Costa de Marfil;E;0;0;0;0;0;0;0
+Ecuador;E;0;0;0;0;0;0;0
+Paises Bajos;F;0;0;0;0;0;0;0
+Japon;F;0;0;0;0;0;0;0
+Suecia;F;0;0;0;0;0;0;0
+Tunez;F;0;0;0;0;0;0;0
+Belgica;G;0;0;0;0;0;0;0
+Egipto;G;0;0;0;0;0;0;0
+Iran;G;0;0;0;0;0;0;0
+Nueva Zelanda;G;0;0;0;0;0;0;0
+Espana;H;0;0;0;0;0;0;0
+Cabo Verde;H;0;0;0;0;0;0;0
+Arabia Saudita;H;0;0;0;0;0;0;0
+Uruguay;H;0;0;0;0;0;0;0
+Francia;I;0;0;0;0;0;0;0
+Senegal;I;0;0;0;0;0;0;0
+Irak;I;0;0;0;0;0;0;0
+Noruega;I;0;0;0;0;0;0;0
+Argentina;J;0;0;0;0;0;0;0
+Argelia;J;0;0;0;0;0;0;0
+Austria;J;0;0;0;0;0;0;0
+Jordania;J;0;0;0;0;0;0;0
+Portugal;K;0;0;0;0;0;0;0
+RD Congo;K;0;0;0;0;0;0;0
+Uzbekistan;K;0;0;0;0;0;0;0
+Colombia;K;0;0;0;0;0;0;0
+Inglaterra;L;0;0;0;0;0;0;0
+Croacia;L;0;0;0;0;0;0;0
+Ghana;L;0;0;0;0;0;0;0
+Panama;L;0;0;0;0;0;0;0
