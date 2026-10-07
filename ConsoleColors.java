@@ -25,6 +25,8 @@ public class ConsoleColors {
     public static final String PURPLE_BACKGROUND = "\033[45m";
     public static final String CYAN_BACKGROUND = "\033[46m";
     public static final String WHITE_BACKGROUND = "\033[47m";
+    public static final String ORANGE_BACKGROUND = "\033[48;5;208m";
+    public static final String BROWN_BACKGROUND = "\033[48;5;88m";
 
     // Fondos de alta intensidad
     public static final String BLACK_BACKGROUND_BRIGHT = "\033[0;100m";

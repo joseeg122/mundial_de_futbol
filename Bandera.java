@@ -1,210 +1,212 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Dibujo de banderas con matrices, escalado en 4 tamanos y lectura/escritura
- * del archivo plano recursos/info_banderas.csv.
- *
- * Formato del archivo (uno por bandera):
- *   Nombre;filas;columnas
- *   <fila 1: un digito de color por celda>
- *   ...
+ * Banderas segun el "Estandar para banderas":
+ * - Todas las banderas estan en recursos/Flags.csv: una matriz de 480 filas x 15 columnas.
+ * - Cada bandera ocupa 10 filas x 15 columnas (48 banderas en total).
+ * - Cada celda es un digito de color: 1 amarillo, 2 naranja, 3 rojo, 4 morado, 5 azul,
+ *   6 verde, 7 blanco, 8 negro, 9 cafe.
+ * - Un switch de 48 casos dice en que fila de la matriz empieza cada pais.
  */
-
-
 public class Bandera {
 
-    // Factor de escala (cuantas celdas de la base se fusionan en una)
-    public static final int GRANDE = 1;
-    public static final int MEDIANO = 2;
-    public static final int PEQUENO = 3;
-    public static final int ICONO = 6;
+    public static final int TOTAL = 48;
+    public static final int FILAS_BANDERA = 10;
+    public static final int COLS_BANDERA = 15;
+    public static final int FILAS_CSV = TOTAL * FILAS_BANDERA;
 
-    public static final int[] FACTORES = {GRANDE, MEDIANO, PEQUENO, ICONO};
+    public static final String[] PAISES = {
+        "Inglaterra", "Espana", "Francia", "Cabo Verde", "Arabia Saudita",
+        "Corea del Sur", "Congo RD", "Ecuador", "Estados Unidos", "Argentina",
+        "Brasil", "Canada", "Costa de Marfil", "Jordania", "Alemania",
+        "Japon", "Colombia", "Belgica", "Turquia", "Sudafrica",
+        "Chequia", "Suiza", "Portugal", "Egipto", "Paraguay",
+        "Escocia", "Haiti", "Argelia", "Mexico", "Marruecos",
+        "Austria", "Noruega", "Bosnia y Herzegovina", "Tunez", "Croacia",
+        "Paises Bajos", "Uruguay", "Qatar", "Australia", "Nueva Zelanda",
+        "Senegal", "Ghana", "Panama", "Irak", "Suecia",
+        "Curazao", "Iran", "Uzbekistan"
+    };
+
+    // Cada caracter del CSV ('1'..'9') corresponde a una posicion (0..8) de este arreglo
+    static final String[] COLORES = {
+        ConsoleColors.YELLOW_BACKGROUND,   // '1'
+        ConsoleColors.ORANGE_BACKGROUND,   // '2'
+        ConsoleColors.RED_BACKGROUND,      // '3'
+        ConsoleColors.PURPLE_BACKGROUND,   // '4'
+        ConsoleColors.BLUE_BACKGROUND,     // '5'
+        ConsoleColors.GREEN_BACKGROUND,    // '6'
+        ConsoleColors.WHITE_BACKGROUND,    // '7'
+        ConsoleColors.BLACK_BACKGROUND,    // '8'
+        ConsoleColors.BROWN_BACKGROUND     // '9'
+    };
+
+    // Tamanos: {filas, columnas}. Todos mantienen la proporcion 2:3 de la bandera original.
     public static final String[] TAMANOS = {
         "Grande (maximo detalle)",
         "Mediano (resolucion intermedia)",
         "Pequeno (baja resolucion)",
         "Icono (miniatura para menus)"
     };
-
-    // Indice = codigo de color del enunciado (0 = transparente)
-    private static final String[] COLORES = {
-        ConsoleColors.RESET,                        // 0 transparente
-        ConsoleColors.RED_BACKGROUND,               // 1 rojo
-        ConsoleColors.BLUE_BACKGROUND,              // 2 azul
-        ConsoleColors.WHITE_BACKGROUND_BRIGHT,      // 3 blanco
-        ConsoleColors.YELLOW_BACKGROUND_BRIGHT,     // 4 amarillo
-        ConsoleColors.GREEN_BACKGROUND,             // 5 verde
-        ConsoleColors.PURPLE_BACKGROUND,            // 6 morado
-        ConsoleColors.CYAN_BACKGROUND,              // 7 cyan
-        ConsoleColors.BLACK_BACKGROUND,             // 8 negro
-        ConsoleColors.BLACK_BACKGROUND_BRIGHT       // 9 gris
+    public static final int[][] MEDIDAS = {
+        {10, 15},  // Grande (tamano original)
+        {6, 9},    // Mediano
+        {4, 6},    // Pequeno
+        {2, 3}     // Icono
     };
+    public static final int ICONO = 3;
 
     // ---------------------------------------------------------------
-    // Algoritmo de escalado
+    // Switch de banderas: fila del CSV (desde 1) donde empieza cada pais
     // ---------------------------------------------------------------
 
-    /**
-     * Reduce la matriz base dividiendola en bloques de factor x factor.
-     * Cada bloque se convierte en una celda con el color que mas se repite
-     * (si hay empate gana el color del centro del bloque).
-     */
-    public static int[][] escalar(int[][] base, int factor) {
-        if (factor <= 1) {
-            return base;
+    public static int filaInicio(int pais) {
+        int fila = 0;
+        switch (pais) {
+            case 1:  fila = 61;  break; // Inglaterra
+            case 2:  fila = 71;  break; // Espana
+            case 3:  fila = 81;  break; // Francia
+            case 4:  fila = 91;  break; // Cabo Verde
+            case 5:  fila = 271; break; // Arabia Saudita
+            case 6:  fila = 101; break; // Corea del Sur
+            case 7:  fila = 111; break; // Congo RD
+            case 8:  fila = 121; break; // Ecuador
+            case 9:  fila = 341; break; // Estados Unidos
+            case 10: fila = 291; break; // Argentina
+            case 11: fila = 321; break; // Brasil
+            case 12: fila = 381; break; // Canada
+            case 13: fila = 301; break; // Costa de Marfil
+            case 14: fila = 371; break; // Jordania
+            case 15: fila = 131; break; // Alemania
+            case 16: fila = 161; break; // Japon
+            case 17: fila = 191; break; // Colombia
+            case 18: fila = 141; break; // Belgica
+            case 19: fila = 181; break; // Turquia
+            case 20: fila = 171; break; // Sudafrica
+            case 21: fila = 151; break; // Chequia
+            case 22: fila = 221; break; // Suiza
+            case 23: fila = 241; break; // Portugal
+            case 24: fila = 231; break; // Egipto
+            case 25: fila = 211; break; // Paraguay
+            case 26: fila = 201; break; // Escocia
+            case 27: fila = 251; break; // Haiti
+            case 28: fila = 261; break; // Argelia
+            case 29: fila = 11;  break; // Mexico
+            case 30: fila = 21;  break; // Marruecos
+            case 31: fila = 1;   break; // Austria
+            case 32: fila = 31;  break; // Noruega
+            case 33: fila = 41;  break; // Bosnia y Herzegovina
+            case 34: fila = 51;  break; // Tunez
+            case 35: fila = 281; break; // Croacia
+            case 36: fila = 311; break; // Paises Bajos
+            case 37: fila = 351; break; // Uruguay
+            case 38: fila = 331; break; // Qatar
+            case 39: fila = 391; break; // Australia
+            case 40: fila = 401; break; // Nueva Zelanda
+            case 41: fila = 361; break; // Senegal
+            case 42: fila = 471; break; // Ghana
+            case 43: fila = 411; break; // Panama
+            case 44: fila = 461; break; // Irak
+            case 45: fila = 431; break; // Suecia
+            case 46: fila = 421; break; // Curazao
+            case 47: fila = 441; break; // Iran
+            case 48: fila = 451; break; // Uzbekistan
         }
-        int filas = Math.max(1, base.length / factor);
-        int cols = Math.max(1, base[0].length / factor);
-        int[][] resultado = new int[filas][cols];
-        for (int i = 0; i < filas; i++) {
-            for (int j = 0; j < cols; j++) {
-                resultado[i][j] = colorDominante(base, i * factor, j * factor, factor);
-            }
-        }
-        return resultado;
+        return fila;
     }
 
-    private static int colorDominante(int[][] base, int f0, int c0, int factor) {
-        int[] cuenta = new int[COLORES.length];
-        int fMax = Math.min(f0 + factor, base.length);
-        int cMax = Math.min(c0 + factor, base[0].length);
-        for (int f = f0; f < fMax; f++) {
-            for (int c = c0; c < cMax; c++) {
-                cuenta[codigo(base[f][c])]++;
+    // ---------------------------------------------------------------
+    // Archivo plano (CSV) <-> matriz de caracteres
+    // ---------------------------------------------------------------
+
+    /** Lee el CSV en una matriz char[480][15]. Devuelve null si no se pudo leer. */
+    public static char[][] cargarCSV(String ruta) {
+        char[][] matriz = new char[FILAS_CSV][COLS_BANDERA];
+        try {
+            BufferedReader archivo = new BufferedReader(new FileReader(ruta));
+            String linea;
+            int fila = 0;
+            while ((linea = archivo.readLine()) != null && fila < matriz.length) {
+                if (fila == 0 && linea.startsWith("﻿")) {
+                    linea = linea.substring(1); // algunos editores ponen una marca al inicio del archivo
+                }
+                String[] columnas = linea.split(";");
+                for (int columna = 0; columna < columnas.length && columna < COLS_BANDERA; columna++) {
+                    if (columnas[columna].trim().length() > 0) {
+                        matriz[fila][columna] = columnas[columna].trim().charAt(0);
+                    }
+                }
+                fila++;
             }
+            archivo.close();
+        } catch (IOException e) {
+            return null;
         }
-        int fc = Math.min(f0 + factor / 2, base.length - 1);
-        int cc = Math.min(c0 + factor / 2, base[0].length - 1);
-        int mejor = codigo(base[fc][cc]);
-        for (int k = 0; k < cuenta.length; k++) {
-            if (cuenta[k] > cuenta[mejor]) {
-                mejor = k;
-            }
-        }
-        return mejor;
+        return matriz;
     }
 
-    private static int codigo(int valor) {
-        return (valor < 0 || valor >= COLORES.length) ? 0 : valor;
+    public static void guardarCSV(String ruta, char[][] matriz) {
+        List<String> lineas = new ArrayList<>();
+        for (int f = 0; f < matriz.length; f++) {
+            String linea = "";
+            for (int c = 0; c < matriz[f].length; c++) {
+                linea = linea + (matriz[f][c] == 0 ? '0' : matriz[f][c]) + ";";
+            }
+            lineas.add(linea);
+        }
+        try {
+            Files.write(Paths.get(ruta), lineas, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            System.out.println("No se pudo guardar " + ruta + ": " + e.getMessage());
+        }
     }
 
     // ---------------------------------------------------------------
     // Dibujo en consola
     // ---------------------------------------------------------------
 
-    /** Cada celda se pinta con 2 espacios de fondo de color (queda casi cuadrada). */
-    public static void dibujar(int[][] matriz) {
-        for (int f = 0; f < matriz.length; f++) {
-            StringBuilder linea = new StringBuilder("   ");
-            for (int c = 0; c < matriz[f].length; c++) {
-                linea.append(COLORES[codigo(matriz[f][c])]).append("  ");
+    /**
+     * Dibuja la bandera que empieza en filaInicio en el tamano indicado (0..3).
+     * Para cada celda del tamano elegido toma la celda del centro del bloque
+     * que le corresponde en la bandera original de 10x15.
+     */
+    public static void dibujar(String nombre, char[][] matriz, int filaInicio, int tamano) {
+        int filasDestino = MEDIDAS[tamano][0];
+        int colsDestino = MEDIDAS[tamano][1];
+        System.out.println("\n " + nombre + " - " + TAMANOS[tamano] + " [" + filasDestino + "x" + colsDestino + "]");
+        for (int f = 0; f < filasDestino; f++) {
+            int filaOrigen = filaInicio - 1 + (2 * f + 1) * FILAS_BANDERA / (2 * filasDestino);
+            System.out.print("   ");
+            for (int c = 0; c < colsDestino; c++) {
+                int colOrigen = (2 * c + 1) * COLS_BANDERA / (2 * colsDestino);
+                char color = matriz[filaOrigen][colOrigen];
+                if (color >= '1' && color <= '9') {
+                    System.out.print(COLORES[color - '1'] + "   ");
+                }
+                System.out.print(ConsoleColors.RESET);
             }
-            linea.append(ConsoleColors.RESET);
-            System.out.println(linea);
+            System.out.println();
         }
-    }
-
-    /** Escala la bandera base con el factor indicado y la dibuja con su titulo. */
-    public static void dibujar(String nombre, int[][] base, int factor) {
-        int[][] m = escalar(base, factor);
-        System.out.println("\n " + nombre + " - " + nombreTamano(factor)
-                + " [" + m.length + "x" + m[0].length + "]");
-        dibujar(m);
     }
 
     /** Dibuja la bandera en sus 4 tamanos, uno tras otro. */
-    public static void dibujarTodosLosTamanos(String nombre, int[][] base) {
-        for (int factor : FACTORES) {
-            dibujar(nombre, base, factor);
+    public static void dibujarTodosLosTamanos(String nombre, char[][] matriz, int filaInicio) {
+        for (int t = 0; t < MEDIDAS.length; t++) {
+            dibujar(nombre, matriz, filaInicio, t);
         }
     }
-
-    private static String nombreTamano(int factor) {
-        for (int i = 0; i < FACTORES.length; i++) {
-            if (FACTORES[i] == factor) {
-                return TAMANOS[i];
-            }
-        }
-        return "factor " + factor;
-    }
-
-    // ---------------------------------------------------------------
-    // Archivo plano (CSV)
-    // ---------------------------------------------------------------
 
     /** Quita tildes/mayusculas para comparar nombres ("Países Bajos" == "paises bajos"). */
     public static String normalizar(String texto) {
         String t = Normalizer.normalize(texto, Normalizer.Form.NFD);
         return t.replaceAll("\\p{M}", "").trim().toLowerCase();
-    }
-
-    public static void guardarCSV(String ruta, Map<String, int[][]> banderas) {
-        List<String> lineas = new ArrayList<>();
-        for (Map.Entry<String, int[][]> e : banderas.entrySet()) {
-            int[][] m = e.getValue();
-            lineas.add(e.getKey() + ";" + m.length + ";" + m[0].length);
-            for (int f = 0; f < m.length; f++) {
-                StringBuilder sb = new StringBuilder();
-                for (int c = 0; c < m[f].length; c++) {
-                    sb.append(m[f][c]);
-                }
-                lineas.add(sb.toString());
-            }
-        }
-        try {
-            Path p = Paths.get(ruta);
-            if (p.getParent() != null) {
-                Files.createDirectories(p.getParent());
-            }
-            Files.write(p, lineas, StandardCharsets.UTF_8);
-        } catch (IOException ex) {
-            System.out.println("No se pudo guardar " + ruta + ": " + ex.getMessage());
-        }
-    }
-
-    /** Lee un archivo de banderas; si no existe devuelve un mapa vacio. */
-    public static Map<String, int[][]> cargarCSV(String ruta) {
-        Map<String, int[][]> mapa = new LinkedHashMap<>();
-        Path p = Paths.get(ruta);
-        if (!Files.exists(p)) {
-            return mapa;
-        }
-        try {
-            List<String> lineas = Files.readAllLines(p, StandardCharsets.UTF_8);
-            int i = 0;
-            while (i < lineas.size()) {
-                String l = lineas.get(i).trim();
-                String[] h = l.split(";");
-                if (l.isEmpty() || l.startsWith("#") || h.length < 3) {
-                    i++;
-                    continue;
-                }
-                String nombre = h[0].trim();
-                int filas = Integer.parseInt(h[1].trim());
-                int cols = Integer.parseInt(h[2].trim());
-                int[][] m = new int[filas][cols];
-                for (int f = 0; f < filas; f++) {
-                    String fila = lineas.get(i + 1 + f).replaceAll("[^0-9]", "");
-                    for (int c = 0; c < cols && c < fila.length(); c++) {
-                        m[f][c] = fila.charAt(c) - '0';
-                    }
-                }
-                mapa.put(nombre, m);
-                i += filas + 1;
-            }
-        } catch (IOException | RuntimeException ex) {
-            System.out.println("Archivo de banderas con formato invalido (" + ruta + "): " + ex.getMessage());
-        }
-        return mapa;
     }
 }

@@ -3,9 +3,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Mundial de Futbol en Consola - Taller Arreglos y Matrices.
@@ -15,7 +13,7 @@ import java.util.Map;
 public class Mundial {
 
     static final String DIR = "recursos/";
-    static final String ARCHIVO_BANDERAS = DIR + "info_banderas.csv";
+    static final String ARCHIVO_BANDERAS = DIR + "Flags.csv";
     static final String ARCHIVO_EQUIPOS = DIR + "equipos.txt";
     static final String ARCHIVO_TABLA = DIR + "tabla_posiciones.txt";
     static final String ARCHIVO_PARTIDOS = DIR + "partidos.txt";
@@ -46,7 +44,19 @@ public class Mundial {
         "      `-._____.-'"
     };
 
-    static Map<String, int[][]> banderas = new LinkedHashMap<>();
+    // Opciones del menu principal: la posicion en el arreglo + 1 es el numero de la opcion
+    static final String[] OPCIONES = {
+        "Ver banderas (4 tamanos)",
+        "Tabla de posiciones (por grupos)",
+        "Tabla de posiciones (ordenada por puntos)",
+        "Fixture: ver partidos por grupo",
+        "Fixture: hora e integrantes de un partido",
+        "Registrar resultado de un partido",
+        "Editar datos de la tabla",
+        "Importar banderas de otro archivo (CSV)",
+    };
+
+    static char[][] banderas; // matriz 480 x 15 leida de Flags.csv (48 banderas de 10 x 15)
     static TablaPosiciones tabla;
     static Fixture fixture;
 
@@ -54,23 +64,63 @@ public class Mundial {
         if (!cargarDatos()) {
             return;
         }
-        mostrarBanner();
+
+        // Banner con ASCII art
+        System.out.println();
+        for (int i = 0; i < BANNER_MUNDIAL.length; i++) {
+            System.out.println(ConsoleColors.YELLOW_BOLD_BRIGHT + "  " + BANNER_MUNDIAL[i] + ConsoleColors.RESET);
+        }
+        for (int i = 0; i < BANNER_FUTBOL.length; i++) {
+            System.out.println(ConsoleColors.GREEN_BOLD_BRIGHT + "  " + BANNER_FUTBOL[i] + ConsoleColors.RESET);
+        }
+        for (int i = 0; i < BALON.length; i++) {
+            System.out.println(ConsoleColors.WHITE_BOLD + "      " + BALON[i] + ConsoleColors.RESET);
+        }
+        System.out.println(ConsoleColors.CYAN_BOLD_BRIGHT + "        ~ Copa del Mundo 2026 en consola ~" + ConsoleColors.RESET);
+
         int opcion;
         do {
             mostrarMenu();
-            opcion = leerEntero("  Elige una opcion: ", 0, 8);
+            opcion = leerEntero("  Elige una opcion: ", 0, OPCIONES.length);
             switch (opcion) {
-                case 1: menuBanderas(); break;
-                case 2: tabla.mostrarPaginada(false); break;
-                case 3: tabla.mostrarPaginada(true); break;
-                case 4: verPartidosPorGrupo(); break;
-                case 5: verDetallePartido(); break;
-                case 6: registrarResultado(); break;
-                case 7: editarTabla(); break;
-                case 8: importarBanderas(); break;
-                default: break;
+                case 1:
+                    menuBanderas();
+                    break;
+                case 2:
+                    tabla.mostrarPaginada(false);
+                    break;
+                case 3:
+                    tabla.mostrarPaginada(true);
+                    break;
+                case 4:
+                    String grupo;
+                    do {
+                        System.out.print("\n  Grupo (A-L): ");
+                        grupo = ConsoleInput.getString().trim();
+                        if (!fixture.existeGrupo(grupo)) {
+                            System.out.println("  Ese grupo no existe.");
+                        }
+                    } while (!fixture.existeGrupo(grupo));
+                    fixture.mostrarPorGrupo(grupo);
+                    break;
+                case 5:
+                    int id = leerEntero("\n  ID del partido (1-" + fixture.total() + "): ", 1, fixture.total());
+                    fixture.mostrarDetalle(id);
+                    break;
+                case 6:
+                    registrarResultado();
+                    break;
+                case 7:
+                    editarTabla();
+                    break;
+                case 8:
+                    importarBanderas();
+                    break;
+                default:
+                    break;
             }
         } while (opcion != 0);
+
         guardarTodo();
         System.out.println("\n  Datos guardados. Hasta la proxima!");
     }
@@ -80,10 +130,12 @@ public class Mundial {
     // ---------------------------------------------------------------
 
     static boolean cargarDatos() {
-        // Banderas: primero las nuestras y luego las del archivo (que puede traer las de otros equipos)
-        banderas.putAll(BanderasBase.todas());
-        banderas.putAll(Bandera.cargarCSV(ARCHIVO_BANDERAS));
-        Bandera.guardarCSV(ARCHIVO_BANDERAS, banderas);
+        // Banderas: matriz leida del CSV del estandar
+        banderas = Bandera.cargarCSV(ARCHIVO_BANDERAS);
+        if (banderas == null) {
+            System.out.println("No se pudo leer " + ARCHIVO_BANDERAS + ". Ejecuta el programa desde la carpeta del proyecto.");
+            return false;
+        }
 
         // Equipos
         List<String> nombres = new ArrayList<>();
@@ -116,44 +168,27 @@ public class Mundial {
     static void guardarTodo() {
         tabla.guardar(ARCHIVO_TABLA);
         fixture.guardar(ARCHIVO_PARTIDOS);
-        Bandera.guardarCSV(ARCHIVO_BANDERAS, banderas);
     }
 
     // ---------------------------------------------------------------
     // Menu con ASCII art (Paso 4)
     // ---------------------------------------------------------------
 
-    static void mostrarBanner() {
-        System.out.println();
-        for (String l : BANNER_MUNDIAL) {
-            System.out.println(ConsoleColors.YELLOW_BOLD_BRIGHT + "  " + l + ConsoleColors.RESET);
-        }
-        for (String l : BANNER_FUTBOL) {
-            System.out.println(ConsoleColors.GREEN_BOLD_BRIGHT + "  " + l + ConsoleColors.RESET);
-        }
-        for (String l : BALON) {
-            System.out.println(ConsoleColors.WHITE_BOLD + "      " + l + ConsoleColors.RESET);
-        }
-        System.out.println(ConsoleColors.CYAN_BOLD_BRIGHT + "        ~ Copa del Mundo 2026 en consola ~" + ConsoleColors.RESET);
-    }
-
     static void mostrarMenu() {
         String c = ConsoleColors.CYAN_BOLD_BRIGHT;
         String r = ConsoleColors.RESET;
+        String linea = c + "  +--------------------------------------------------+" + r;
+
         System.out.println();
-        System.out.println(c + "  +--------------------------------------------------+" + r);
+        System.out.println(linea);
         System.out.println(c + "  |" + r + "               M E N U   P R I N C I P A L        " + c + "|" + r);
-        System.out.println(c + "  +--------------------------------------------------+" + r);
-        System.out.println(c + "  |" + r + "  1. Ver banderas (4 tamanos)                     " + c + "|" + r);
-        System.out.println(c + "  |" + r + "  2. Tabla de posiciones (por grupos)             " + c + "|" + r);
-        System.out.println(c + "  |" + r + "  3. Tabla de posiciones (ordenada por puntos)    " + c + "|" + r);
-        System.out.println(c + "  |" + r + "  4. Fixture: ver partidos por grupo              " + c + "|" + r);
-        System.out.println(c + "  |" + r + "  5. Fixture: hora e integrantes de un partido    " + c + "|" + r);
-        System.out.println(c + "  |" + r + "  6. Registrar resultado de un partido            " + c + "|" + r);
-        System.out.println(c + "  |" + r + "  7. Editar datos de la tabla                     " + c + "|" + r);
-        System.out.println(c + "  |" + r + "  8. Importar banderas de otro archivo (CSV)      " + c + "|" + r);
-        System.out.println(c + "  |" + r + "  0. Guardar y salir                              " + c + "|" + r);
-        System.out.println(c + "  +--------------------------------------------------+" + r);
+        System.out.println(linea);
+        for (int i = 0; i < OPCIONES.length; i++) {
+            // %-45s rellena con espacios a la derecha para que el borde quede alineado
+            System.out.println(c + "  |" + r + String.format("  %d. %-45s", i + 1, OPCIONES[i]) + c + "|" + r);
+        }
+        System.out.println(c + "  |" + r + String.format("  0. %-45s", "Guardar y salir") + c + "|" + r);
+        System.out.println(linea);
     }
 
     // ---------------------------------------------------------------
@@ -161,17 +196,17 @@ public class Mundial {
     // ---------------------------------------------------------------
 
     static int leerEntero(String mensaje, int min, int max) {
-        int valor;
-        boolean valido;
-        do {
+        while (true) {
             System.out.print(mensaje);
-            valor = ConsoleInput.getInt();
-            valido = valor >= min && valor <= max;
-            if (!valido) {
+            Integer valor = ConsoleInput.leerEnteroONull();
+            if (valor == null) {
+                System.out.println("  Debes escribir un numero entero (no letras ni vacio).");
+            } else if (valor < min || valor > max) {
                 System.out.println("  Valor invalido. Debe estar entre " + min + " y " + max + ".");
+            } else {
+                return valor;
             }
-        } while (!valido);
-        return valor;
+        }
     }
 
     // ---------------------------------------------------------------
@@ -179,64 +214,42 @@ public class Mundial {
     // ---------------------------------------------------------------
 
     static void menuBanderas() {
-        String[] nombres = banderas.keySet().toArray(new String[0]);
+        int total = Bandera.TOTAL;
         int opcion;
         do {
             System.out.println("\n  --- BANDERAS ---");
-            for (int i = 0; i < nombres.length; i++) {
-                System.out.println("  " + (i + 1) + ". " + nombres[i]);
+            for (int i = 0; i < total; i++) {
+                System.out.println("  " + (i + 1) + ". " + Bandera.PAISES[i]);
             }
-            System.out.println("  " + (nombres.length + 1) + ". Ver todas (tamano Icono, comparacion)");
+            System.out.println("  " + (total + 1) + ". Ver todas (tamano Icono, comparacion)");
             System.out.println("  0. Volver");
-            opcion = leerEntero("  Elige una bandera: ", 0, nombres.length + 1);
-            if (opcion >= 1 && opcion <= nombres.length) {
-                mostrarBandera(nombres[opcion - 1]);
-            } else if (opcion == nombres.length + 1) {
-                for (String n : nombres) {
-                    Bandera.dibujar(n, banderas.get(n), Bandera.ICONO);
+            opcion = leerEntero("  Elige una bandera: ", 0, total + 1);
+
+            if (opcion >= 1 && opcion <= total) {
+                // Una bandera: elegir el tamano
+                String nombre = Bandera.PAISES[opcion - 1];
+                int fila = Bandera.filaInicio(opcion);
+                System.out.println("\n  Tamano de " + nombre + ":");
+                for (int i = 0; i < Bandera.TAMANOS.length; i++) {
+                    System.out.println("  " + (i + 1) + ". " + Bandera.TAMANOS[i]);
+                }
+                System.out.println("  " + (Bandera.TAMANOS.length + 1) + ". Los 4 tamanos");
+                int t = leerEntero("  Elige: ", 1, Bandera.TAMANOS.length + 1);
+                if (t <= Bandera.TAMANOS.length) {
+                    Bandera.dibujar(nombre, banderas, fila, t - 1);
+                } else {
+                    Bandera.dibujarTodosLosTamanos(nombre, banderas, fila);
+                }
+            } else if (opcion == total + 1) {
+                for (int i = 1; i <= total; i++) {
+                    Bandera.dibujar(Bandera.PAISES[i - 1], banderas, Bandera.filaInicio(i), Bandera.ICONO);
                 }
             }
         } while (opcion != 0);
     }
 
-    static void mostrarBandera(String nombre) {
-        System.out.println("\n  Tamano de " + nombre + ":");
-        for (int i = 0; i < Bandera.TAMANOS.length; i++) {
-            System.out.println("  " + (i + 1) + ". " + Bandera.TAMANOS[i]);
-        }
-        System.out.println("  " + (Bandera.TAMANOS.length + 1) + ". Los 4 tamanos");
-        int t = leerEntero("  Elige: ", 1, Bandera.TAMANOS.length + 1);
-        int[][] base = banderas.get(nombre);
-        if (t <= Bandera.TAMANOS.length) {
-            Bandera.dibujar(nombre, base, Bandera.FACTORES[t - 1]);
-        } else {
-            Bandera.dibujarTodosLosTamanos(nombre, base);
-        }
-    }
-
     // ---------------------------------------------------------------
-    // Paso 3: fixture
-    // ---------------------------------------------------------------
-
-    static void verPartidosPorGrupo() {
-        String grupo;
-        do {
-            System.out.print("\n  Grupo (A-L): ");
-            grupo = ConsoleInput.getString().trim();
-            if (!fixture.existeGrupo(grupo)) {
-                System.out.println("  Ese grupo no existe.");
-            }
-        } while (!fixture.existeGrupo(grupo));
-        fixture.mostrarPorGrupo(grupo);
-    }
-
-    static void verDetallePartido() {
-        int id = leerEntero("\n  ID del partido (1-" + fixture.total() + "): ", 1, fixture.total());
-        fixture.mostrarDetalle(id);
-    }
-
-    // ---------------------------------------------------------------
-    // Paso 2: edicion de la tabla
+    // Paso 2 y 3: resultados y edicion de la tabla
     // ---------------------------------------------------------------
 
     static void registrarResultado() {
@@ -290,15 +303,29 @@ public class Mundial {
     // ---------------------------------------------------------------
 
     static void importarBanderas() {
-        System.out.print("\n  Ruta del archivo CSV de un companero (ej: recursos/otro_grupo.csv): ");
+        System.out.print("\n  Ruta del Flags.csv de un companero (ej: recursos/otro_grupo.csv): ");
         String ruta = ConsoleInput.getString().trim();
-        Map<String, int[][]> nuevas = Bandera.cargarCSV(ruta);
-        if (nuevas.isEmpty()) {
+        char[][] otra = Bandera.cargarCSV(ruta);
+        if (otra == null) {
+            System.out.println("  No se pudo leer ese archivo.");
+            return;
+        }
+        // Copia cada bandera que el otro archivo tenga dibujada (10 filas por bandera)
+        int importadas = 0;
+        for (int pais = 1; pais <= Bandera.TOTAL; pais++) {
+            int inicio = Bandera.filaInicio(pais) - 1;
+            if (otra[inicio][0] >= '1' && otra[inicio][0] <= '9') {
+                for (int f = inicio; f < inicio + Bandera.FILAS_BANDERA; f++) {
+                    banderas[f] = otra[f];
+                }
+                importadas++;
+            }
+        }
+        if (importadas == 0) {
             System.out.println("  No se encontraron banderas en ese archivo.");
             return;
         }
-        banderas.putAll(nuevas);
         Bandera.guardarCSV(ARCHIVO_BANDERAS, banderas);
-        System.out.println("  Banderas importadas: " + nuevas.size() + ". Ya aparecen en el menu de banderas.");
+        System.out.println("  Banderas importadas: " + importadas + ". Ya se ven en el menu de banderas.");
     }
 }

@@ -160,7 +160,7 @@ public class TablaPosiciones {
         int[] anchos = {3, 2, 22, 3, 3, 3, 3, 3, 3, 4, 3, 3, 4};
         String sep = linea('-', '+', anchos);
         int inicio = pagina * TAM_PAGINA;
-        int fin = Math.min(inicio + TAM_PAGINA, orden.length);
+        int fin = (inicio + TAM_PAGINA > orden.length) ? orden.length : inicio + TAM_PAGINA;
 
         System.out.println(ConsoleColors.CYAN_BOLD_BRIGHT + sep);
         System.out.printf("| %3s | %2s | %-22s | %3s | %3s | %3s | %3s | %3s | %3s | %4s | %3s | %3s | %4s |%n",
