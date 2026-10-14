@@ -1,10 +1,3 @@
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Mundial de Futbol en Consola - Taller Arreglos y Matrices.
  * Paso 1: banderas (matrices + escalado)  | Paso 2: tabla de posiciones
@@ -57,55 +50,33 @@ public class Mundial {
     };
 
     static char[][] banderas; // matriz 480 x 15 leida de Flags.csv (48 banderas de 10 x 15)
-    static TablaPosiciones tabla;
-    static Fixture fixture;
 
     public static void main(String[] args) {
         if (!cargarDatos()) {
             return;
         }
 
-        // Banner con ASCII art
-        System.out.println();
-        for (int i = 0; i < BANNER_MUNDIAL.length; i++) {
-            System.out.println(ConsoleColors.YELLOW_BOLD_BRIGHT + "  " + BANNER_MUNDIAL[i] + ConsoleColors.RESET);
-        }
-        for (int i = 0; i < BANNER_FUTBOL.length; i++) {
-            System.out.println(ConsoleColors.GREEN_BOLD_BRIGHT + "  " + BANNER_FUTBOL[i] + ConsoleColors.RESET);
-        }
-        for (int i = 0; i < BALON.length; i++) {
-            System.out.println(ConsoleColors.WHITE_BOLD + "      " + BALON[i] + ConsoleColors.RESET);
-        }
-        System.out.println(ConsoleColors.CYAN_BOLD_BRIGHT + "        ~ Copa del Mundo 2026 en consola ~" + ConsoleColors.RESET);
+        mostrarBanner();
 
         int opcion;
         do {
             mostrarMenu();
-            opcion = leerEntero("  Elige una opcion: ", 0, OPCIONES.length);
+            opcion = ConsoleInput.leerEntero("  Elige una opcion: ", 0, OPCIONES.length);
             switch (opcion) {
                 case 1:
                     menuBanderas();
                     break;
                 case 2:
-                    tabla.mostrarPaginada(false);
+                    TablaPosiciones.mostrarPaginada(false);
                     break;
                 case 3:
-                    tabla.mostrarPaginada(true);
+                    TablaPosiciones.mostrarPaginada(true);
                     break;
                 case 4:
-                    String grupo;
-                    do {
-                        System.out.print("\n  Grupo (A-L): ");
-                        grupo = ConsoleInput.getString().trim();
-                        if (!fixture.existeGrupo(grupo)) {
-                            System.out.println("  Ese grupo no existe.");
-                        }
-                    } while (!fixture.existeGrupo(grupo));
-                    fixture.mostrarPorGrupo(grupo);
+                    verGrupo();
                     break;
                 case 5:
-                    int id = leerEntero("\n  ID del partido (1-" + fixture.total() + "): ", 1, fixture.total());
-                    fixture.mostrarDetalle(id);
+                    Fixture.mostrarDetalle(pedirIdPartido());
                     break;
                 case 6:
                     registrarResultado();
@@ -116,13 +87,41 @@ public class Mundial {
                 case 8:
                     importarBanderas();
                     break;
-                default:
-                    break;
             }
         } while (opcion != 0);
 
         guardarTodo();
         System.out.println("\n  Datos guardados. Hasta la proxima!");
+    }
+
+    static void imprimirArte(String[] arte, String color, String sangria) {
+        for (int i = 0; i < arte.length; i++) {
+            System.out.println(color + sangria + arte[i] + ConsoleColors.RESET);
+        }
+    }
+
+    static void mostrarBanner() {
+        System.out.println();
+        imprimirArte(BANNER_MUNDIAL, ConsoleColors.YELLOW_BOLD_BRIGHT, "  ");
+        imprimirArte(BANNER_FUTBOL, ConsoleColors.GREEN_BOLD_BRIGHT, "  ");
+        imprimirArte(BALON, ConsoleColors.WHITE_BOLD, "      ");
+        System.out.println(ConsoleColors.CYAN_BOLD_BRIGHT + "        ~ Copa del Mundo 2026 en consola ~" + ConsoleColors.RESET);
+    }
+
+    static int pedirIdPartido() {
+        return ConsoleInput.leerEntero("\n  ID del partido (1-" + Fixture.total + "): ", 1, Fixture.total);
+    }
+
+    static void verGrupo() {
+        String grupo;
+        do {
+            System.out.print("\n  Grupo (A-L): ");
+            grupo = ConsoleInput.getString().trim();
+            if (!Fixture.existeGrupo(grupo)) {
+                System.out.println("  Ese grupo no existe.");
+            }
+        } while (!Fixture.existeGrupo(grupo));
+        Fixture.mostrarPorGrupo(grupo);
     }
 
     // ---------------------------------------------------------------
@@ -137,28 +136,14 @@ public class Mundial {
             return false;
         }
 
-        // Equipos
-        List<String> nombres = new ArrayList<>();
-        List<String> grupos = new ArrayList<>();
-        try {
-            for (String l : Files.readAllLines(Paths.get(ARCHIVO_EQUIPOS), StandardCharsets.UTF_8)) {
-                String[] t = l.split(";");
-                if (l.startsWith("#") || t.length < 2) {
-                    continue;
-                }
-                grupos.add(t[0].trim());
-                nombres.add(t[1].trim());
-            }
-        } catch (IOException e) {
-            System.out.println("No se pudo leer " + ARCHIVO_EQUIPOS + ". Ejecuta el programa desde la carpeta del proyecto.");
+        // Equipos y tabla de posiciones
+        if (!TablaPosiciones.cargarEquipos(ARCHIVO_EQUIPOS)) {
             return false;
         }
-        tabla = new TablaPosiciones(nombres.toArray(new String[0]), grupos.toArray(new String[0]));
-        tabla.cargar(ARCHIVO_TABLA);
+        TablaPosiciones.cargar(ARCHIVO_TABLA);
 
         // Fixture
-        fixture = Fixture.cargar(ARCHIVO_PARTIDOS);
-        if (fixture == null) {
+        if (!Fixture.cargar(ARCHIVO_PARTIDOS)) {
             System.out.println("No se pudo cargar " + ARCHIVO_PARTIDOS);
             return false;
         }
@@ -166,8 +151,8 @@ public class Mundial {
     }
 
     static void guardarTodo() {
-        tabla.guardar(ARCHIVO_TABLA);
-        fixture.guardar(ARCHIVO_PARTIDOS);
+        TablaPosiciones.guardar(ARCHIVO_TABLA);
+        Fixture.guardar(ARCHIVO_PARTIDOS);
     }
 
     // ---------------------------------------------------------------
@@ -184,29 +169,12 @@ public class Mundial {
         System.out.println(c + "  |" + r + "               M E N U   P R I N C I P A L        " + c + "|" + r);
         System.out.println(linea);
         for (int i = 0; i < OPCIONES.length; i++) {
-            // %-45s rellena con espacios a la derecha para que el borde quede alineado
-            System.out.println(c + "  |" + r + String.format("  %d. %-45s", i + 1, OPCIONES[i]) + c + "|" + r);
+            // rellenarDerecha completa con espacios para que el borde quede alineado
+            String texto = "  " + (i + 1) + ". " + OPCIONES[i];
+            System.out.println(c + "  |" + r + TablaPosiciones.rellenarDerecha(texto, 50) + c + "|" + r);
         }
-        System.out.println(c + "  |" + r + String.format("  0. %-45s", "Guardar y salir") + c + "|" + r);
+        System.out.println(c + "  |" + r + TablaPosiciones.rellenarDerecha("  0. Guardar y salir", 50) + c + "|" + r);
         System.out.println(linea);
-    }
-
-    // ---------------------------------------------------------------
-    // Lectura validada
-    // ---------------------------------------------------------------
-
-    static int leerEntero(String mensaje, int min, int max) {
-        while (true) {
-            System.out.print(mensaje);
-            Integer valor = ConsoleInput.leerEnteroONull();
-            if (valor == null) {
-                System.out.println("  Debes escribir un numero entero (no letras ni vacio).");
-            } else if (valor < min || valor > max) {
-                System.out.println("  Valor invalido. Debe estar entre " + min + " y " + max + ".");
-            } else {
-                return valor;
-            }
-        }
     }
 
     // ---------------------------------------------------------------
@@ -223,7 +191,7 @@ public class Mundial {
             }
             System.out.println("  " + (total + 1) + ". Ver todas (tamano Icono, comparacion)");
             System.out.println("  0. Volver");
-            opcion = leerEntero("  Elige una bandera: ", 0, total + 1);
+            opcion = ConsoleInput.leerEntero("  Elige una bandera: ", 0, total + 1);
 
             if (opcion >= 1 && opcion <= total) {
                 // Una bandera: elegir el tamano
@@ -234,7 +202,7 @@ public class Mundial {
                     System.out.println("  " + (i + 1) + ". " + Bandera.TAMANOS[i]);
                 }
                 System.out.println("  " + (Bandera.TAMANOS.length + 1) + ". Los 4 tamanos");
-                int t = leerEntero("  Elige: ", 1, Bandera.TAMANOS.length + 1);
+                int t = ConsoleInput.leerEntero("  Elige: ", 1, Bandera.TAMANOS.length + 1);
                 if (t <= Bandera.TAMANOS.length) {
                     Bandera.dibujar(nombre, banderas, fila, t - 1);
                 } else {
@@ -253,47 +221,47 @@ public class Mundial {
     // ---------------------------------------------------------------
 
     static void registrarResultado() {
-        int id = leerEntero("\n  ID del partido (1-" + fixture.total() + "): ", 1, fixture.total());
-        fixture.mostrarDetalle(id);
-        String[] p = fixture.partido(id);
-        int local = tabla.buscar(p[Fixture.LOCAL]);
-        int visita = tabla.buscar(p[Fixture.VISITANTE]);
+        int id = pedirIdPartido();
+        Fixture.mostrarDetalle(id);
+        String[] p = Fixture.partido(id);
+        int local = TablaPosiciones.buscar(p[Fixture.LOCAL]);
+        int visita = TablaPosiciones.buscar(p[Fixture.VISITANTE]);
         if (local < 0 || visita < 0) {
             System.out.println("  Los equipos de este partido no estan en la tabla.");
             return;
         }
-        int gl = leerEntero("  Goles de " + p[Fixture.LOCAL] + ": ", 0, 99);
-        int gv = leerEntero("  Goles de " + p[Fixture.VISITANTE] + ": ", 0, 99);
-        if (fixture.jugado(id)) {
+        int gl = ConsoleInput.leerEntero("  Goles de " + p[Fixture.LOCAL] + ": ", 0, 99);
+        int gv = ConsoleInput.leerEntero("  Goles de " + p[Fixture.VISITANTE] + ": ", 0, 99);
+        if (Fixture.jugado(id)) {
             // corrige: quita el resultado anterior antes de aplicar el nuevo
-            tabla.aplicarResultado(local, visita, fixture.golesLocal(id), fixture.golesVisita(id), -1);
+            TablaPosiciones.aplicarResultado(local, visita, Fixture.golesLocal(id), Fixture.golesVisita(id), -1);
         }
-        tabla.aplicarResultado(local, visita, gl, gv, 1);
-        fixture.registrarResultado(id, gl, gv);
+        TablaPosiciones.aplicarResultado(local, visita, gl, gv, 1);
+        Fixture.registrarResultado(id, gl, gv);
         guardarTodo();
         System.out.println("  Resultado registrado: " + p[Fixture.LOCAL] + " " + gl + " - " + gv + " " + p[Fixture.VISITANTE]);
     }
 
     static void editarTabla() {
         System.out.print("\n  Nombre del equipo a editar (ej: Uruguay): ");
-        int fila = tabla.buscar(ConsoleInput.getString());
+        int fila = TablaPosiciones.buscar(ConsoleInput.getString());
         if (fila < 0) {
             System.out.println("  Equipo no encontrado.");
             return;
         }
-        System.out.println("  Editando: " + tabla.getEquipo(fila));
+        System.out.println("  Editando: " + TablaPosiciones.equipos[fila]);
         for (int i = 0; i < TablaPosiciones.EDITABLES.length; i++) {
             int col = TablaPosiciones.EDITABLES[i];
             System.out.println("  " + (i + 1) + ". " + TablaPosiciones.COLUMNAS[col]
-                    + "  (actual: " + tabla.getValor(fila, col) + ")");
+                    + "  (actual: " + TablaPosiciones.datos[fila][col] + ")");
         }
-        int op = leerEntero("  Columna a cambiar (0 = cancelar): ", 0, TablaPosiciones.EDITABLES.length);
+        int op = ConsoleInput.leerEntero("  Columna a cambiar (0 = cancelar): ", 0, TablaPosiciones.EDITABLES.length);
         if (op == 0) {
             return;
         }
         int col = TablaPosiciones.EDITABLES[op - 1];
-        int valor = leerEntero("  Nuevo valor para " + TablaPosiciones.COLUMNAS[col] + ": ", 0, 999);
-        tabla.editar(fila, col, valor);
+        int valor = ConsoleInput.leerEntero("  Nuevo valor para " + TablaPosiciones.COLUMNAS[col] + ": ", 0, 999);
+        TablaPosiciones.editar(fila, col, valor);
         guardarTodo();
         System.out.println("  Tabla actualizada (PJ, DG y Pts se recalculan solos).");
     }

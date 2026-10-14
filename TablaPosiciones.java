@@ -1,58 +1,102 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.io.PrintWriter;
 
 /**
  * Tabla de posiciones del mundial representada con una matriz:
  * filas = equipos, columnas = PJ, PG, PE, PP, GF, GC, DG, TA, TR, Pts.
- * El contenido es editable y se puede guardar/cargar desde un archivo plano.
+ * El contenido es editable y se guarda/carga en un archivo plano.
  */
 public class TablaPosiciones {
 
-    public static final String[] COLUMNAS = {"PJ", "PG", "PE", "PP", "GF", "GC", "DG", "TA", "TR", "Pts"};
-    public static final int PJ = 0, PG = 1, PE = 2, PP = 3, GF = 4, GC = 5, DG = 6, TA = 7, TR = 8, PTS = 9;
+    static final String[] COLUMNAS = {"PJ", "PG", "PE", "PP", "GF", "GC", "DG", "TA", "TR", "Pts"};
+    static final int PJ = 0, PG = 1, PE = 2, PP = 3, GF = 4, GC = 5, DG = 6, TA = 7, TR = 8, PTS = 9;
 
-    /** Columnas que el usuario puede editar (las demas se calculan solas). */
-    public static final int[] EDITABLES = {PG, PE, PP, GF, GC, TA, TR};
+    // Columnas que el usuario puede editar (las demas se calculan solas)
+    static final int[] EDITABLES = {PG, PE, PP, GF, GC, TA, TR};
 
-    public static final int TAM_PAGINA = 12;
+    static final int TAM_PAGINA = 12;
+    static final int MAX_EQUIPOS = 48;
 
-    private final String[] equipos;
-    private final String[] grupos;
-    private final int[][] datos;
+    static String[] equipos = new String[MAX_EQUIPOS];
+    static String[] grupos = new String[MAX_EQUIPOS];
+    static int[][] datos = new int[MAX_EQUIPOS][COLUMNAS.length];
+    static int total = 0; // cuantos equipos se leyeron del archivo
 
-    public TablaPosiciones(String[] equipos, String[] grupos) {
-        this.equipos = equipos;
-        this.grupos = grupos;
-        this.datos = new int[equipos.length][COLUMNAS.length];
+    // ---------------------------------------------------------------
+    // Cadenas: ayudas para alinear texto y comparar nombres
+    // ---------------------------------------------------------------
+
+    /** Agrega espacios a la derecha hasta completar el ancho (texto alineado a la izquierda). */
+    static String rellenarDerecha(String texto, int ancho) {
+        while (texto.length() < ancho) {
+            texto = texto + " ";
+        }
+        return texto;
     }
 
-    public int total() {
-        return equipos.length;
+    /** Agrega espacios a la izquierda hasta completar el ancho (texto alineado a la derecha). */
+    static String rellenarIzquierda(String texto, int ancho) {
+        while (texto.length() < ancho) {
+            texto = " " + texto;
+        }
+        return texto;
     }
 
-    public String getEquipo(int fila) {
-        return equipos[fila];
+    /** Pasa a minusculas y quita tildes para comparar ("Países Bajos" = "paises bajos"). */
+    static String normalizar(String texto) {
+        String t = texto.trim().toLowerCase();
+        t = t.replace('á', 'a');
+        t = t.replace('é', 'e');
+        t = t.replace('í', 'i');
+        t = t.replace('ó', 'o');
+        t = t.replace('ú', 'u');
+        t = t.replace('ñ', 'n');
+        return t;
+    }
+
+    // ---------------------------------------------------------------
+    // Equipos
+    // ---------------------------------------------------------------
+
+    /** Lee equipos.txt (lineas "grupo;equipo"). Devuelve false si no se pudo leer. */
+    static boolean cargarEquipos(String ruta) {
+        total = 0;
+        try {
+            BufferedReader archivo = new BufferedReader(new FileReader(ruta));
+            String linea;
+            while ((linea = archivo.readLine()) != null && total < MAX_EQUIPOS) {
+                String[] t = linea.split(";");
+                if (linea.startsWith("#") || t.length < 2) {
+                    continue;
+                }
+                grupos[total] = t[0].trim();
+                equipos[total] = t[1].trim();
+                total++;
+            }
+            archivo.close();
+        } catch (IOException e) {
+            System.out.println("No se pudo leer " + ruta + ". Ejecuta el programa desde la carpeta del proyecto.");
+            return false;
+        }
+        return total > 0;
     }
 
     /** Busca un equipo por nombre (exacto o parcial, sin tildes). Devuelve -1 si no existe. */
-    public int buscar(String texto) {
-        String t = Bandera.normalizar(texto);
-        if (t.isEmpty()) {
+    static int buscar(String texto) {
+        String t = normalizar(texto);
+        if (t.length() == 0) {
             return -1;
         }
-        for (int i = 0; i < equipos.length; i++) {
-            if (Bandera.normalizar(equipos[i]).equals(t)) {
+        for (int i = 0; i < total; i++) {
+            if (normalizar(equipos[i]).equals(t)) {
                 return i;
             }
         }
-        for (int i = 0; i < equipos.length; i++) {
-            if (Bandera.normalizar(equipos[i]).contains(t)) {
+        for (int i = 0; i < total; i++) {
+            if (normalizar(equipos[i]).contains(t)) {
                 return i;
             }
         }
@@ -64,18 +108,17 @@ public class TablaPosiciones {
     // ---------------------------------------------------------------
 
     /** Recalcula las columnas derivadas de una fila: PJ, DG y Pts. */
-    private void recalcular(int fila) {
-        int[] d = datos[fila];
-        d[PJ] = d[PG] + d[PE] + d[PP];
-        d[DG] = d[GF] - d[GC];
-        d[PTS] = 3 * d[PG] + d[PE];
+    static void recalcular(int fila) {
+        datos[fila][PJ] = datos[fila][PG] + datos[fila][PE] + datos[fila][PP];
+        datos[fila][DG] = datos[fila][GF] - datos[fila][GC];
+        datos[fila][PTS] = 3 * datos[fila][PG] + datos[fila][PE];
     }
 
     /**
      * Suma (signo = 1) o resta (signo = -1) un resultado a la tabla.
      * Restar sirve para corregir un resultado ya registrado.
      */
-    public void aplicarResultado(int local, int visita, int golesLocal, int golesVisita, int signo) {
+    static void aplicarResultado(int local, int visita, int golesLocal, int golesVisita, int signo) {
         datos[local][GF] += signo * golesLocal;
         datos[local][GC] += signo * golesVisita;
         datos[visita][GF] += signo * golesVisita;
@@ -94,96 +137,125 @@ public class TablaPosiciones {
         recalcular(visita);
     }
 
-    /** Edita una celda (solo columnas editables) y recalcula PJ, DG y Pts. */
-    public boolean editar(int fila, int columna, int valor) {
-        boolean permitida = false;
-        for (int c : EDITABLES) {
-            if (c == columna) {
-                permitida = true;
-            }
-        }
-        if (!permitida || valor < 0 || fila < 0 || fila >= datos.length) {
-            return false;
-        }
+    /** Cambia una celda editable y recalcula PJ, DG y Pts. */
+    static void editar(int fila, int columna, int valor) {
         datos[fila][columna] = valor;
         recalcular(fila);
-        return true;
-    }
-
-    public int getValor(int fila, int columna) {
-        return datos[fila][columna];
     }
 
     // ---------------------------------------------------------------
     // Orden e impresion paginada
     // ---------------------------------------------------------------
 
-    /** Indices de las filas en el orden a mostrar: por grupo o por puntos (Pts, DG, GF). */
-    public int[] ordenar(boolean porPuntos) {
-        List<Integer> idx = new ArrayList<>();
-        for (int i = 0; i < equipos.length; i++) {
-            idx.add(i);
+    /** Dice si el equipo a va antes que el equipo b: mas Pts, luego mas DG, luego mas GF, luego nombre. */
+    static boolean vaAntes(int a, int b) {
+        if (datos[a][PTS] != datos[b][PTS]) {
+            return datos[a][PTS] > datos[b][PTS];
+        }
+        if (datos[a][DG] != datos[b][DG]) {
+            return datos[a][DG] > datos[b][DG];
+        }
+        if (datos[a][GF] != datos[b][GF]) {
+            return datos[a][GF] > datos[b][GF];
+        }
+        return equipos[a].compareTo(equipos[b]) < 0;
+    }
+
+    /** Indices de las filas en el orden a mostrar: por grupo (orden del archivo) o por puntos. */
+    static int[] ordenar(boolean porPuntos) {
+        int[] orden = new int[total];
+        for (int i = 0; i < total; i++) {
+            orden[i] = i;
         }
         if (porPuntos) {
-            idx.sort((a, b) -> {
-                if (datos[a][PTS] != datos[b][PTS]) return datos[b][PTS] - datos[a][PTS];
-                if (datos[a][DG] != datos[b][DG]) return datos[b][DG] - datos[a][DG];
-                if (datos[a][GF] != datos[b][GF]) return datos[b][GF] - datos[a][GF];
-                return equipos[a].compareTo(equipos[b]);
-            });
-        }
-        int[] orden = new int[idx.size()];
-        for (int i = 0; i < orden.length; i++) {
-            orden[i] = idx.get(i);
+            // ordenamiento por seleccion
+            for (int i = 0; i < total - 1; i++) {
+                int mejor = i;
+                for (int j = i + 1; j < total; j++) {
+                    if (vaAntes(orden[j], orden[mejor])) {
+                        mejor = j;
+                    }
+                }
+                int temporal = orden[i];
+                orden[i] = orden[mejor];
+                orden[mejor] = temporal;
+            }
         }
         return orden;
     }
 
-    public int totalPaginas() {
-        return (equipos.length + TAM_PAGINA - 1) / TAM_PAGINA;
+    static int totalPaginas() {
+        return (total + TAM_PAGINA - 1) / TAM_PAGINA;
     }
 
-    private static String linea(char relleno, char cruce, int[] anchos) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(cruce);
-        for (int a : anchos) {
-            for (int i = 0; i < a + 2; i++) {
-                sb.append(relleno);
+    /** Linea separadora: +-----+----+ segun el ancho de cada columna. */
+    static String linea(int[] anchos) {
+        String s = "+";
+        for (int k = 0; k < anchos.length; k++) {
+            for (int i = 0; i < anchos[k] + 2; i++) {
+                s = s + "-";
             }
-            sb.append(cruce);
+            s = s + "+";
         }
-        return sb.toString();
+        return s;
     }
 
-    /** Imprime una pagina de la tabla con formato. */
-    public void imprimirPagina(int[] orden, int pagina) {
+    /** Imprime una fila de la tabla: la columna 2 (equipo) a la izquierda y las demas a la derecha. */
+    static void imprimirFila(String[] celdas, int[] anchos) {
+        String s = "|";
+        for (int k = 0; k < celdas.length; k++) {
+            if (k == 2) {
+                s = s + " " + rellenarDerecha(celdas[k], anchos[k]) + " |";
+            } else {
+                s = s + " " + rellenarIzquierda(celdas[k], anchos[k]) + " |";
+            }
+        }
+        System.out.println(s);
+    }
+
+    /** Imprime una pagina de la tabla. */
+    static void imprimirPagina(int[] orden, int pagina) {
         int[] anchos = {3, 2, 22, 3, 3, 3, 3, 3, 3, 4, 3, 3, 4};
-        String sep = linea('-', '+', anchos);
+        String sep = linea(anchos);
+        String[] titulos = {"#", "Gr", "Equipo", "PJ", "PG", "PE", "PP", "GF", "GC", "DG", "TA", "TR", "Pts"};
         int inicio = pagina * TAM_PAGINA;
-        int fin = (inicio + TAM_PAGINA > orden.length) ? orden.length : inicio + TAM_PAGINA;
+        int fin = inicio + TAM_PAGINA;
+        if (fin > total) {
+            fin = total;
+        }
 
         System.out.println(ConsoleColors.CYAN_BOLD_BRIGHT + sep);
-        System.out.printf("| %3s | %2s | %-22s | %3s | %3s | %3s | %3s | %3s | %3s | %4s | %3s | %3s | %4s |%n",
-                "#", "Gr", "Equipo", "PJ", "PG", "PE", "PP", "GF", "GC", "DG", "TA", "TR", "Pts");
+        imprimirFila(titulos, anchos);
         System.out.println(sep + ConsoleColors.RESET);
         for (int k = inicio; k < fin; k++) {
             int i = orden[k];
-            int[] d = datos[i];
-            System.out.printf("| %3d | %2s | %-22s | %3d | %3d | %3d | %3d | %3d | %3d | %+4d | %3d | %3d | %4d |%n",
-                    k + 1, grupos[i], equipos[i], d[PJ], d[PG], d[PE], d[PP], d[GF], d[GC], d[DG], d[TA], d[TR], d[PTS]);
+            String dg = "" + datos[i][DG];
+            if (datos[i][DG] >= 0) {
+                dg = "+" + dg;
+            }
+            String[] celdas = {
+                "" + (k + 1), grupos[i], equipos[i],
+                "" + datos[i][PJ], "" + datos[i][PG], "" + datos[i][PE], "" + datos[i][PP],
+                "" + datos[i][GF], "" + datos[i][GC], dg,
+                "" + datos[i][TA], "" + datos[i][TR], "" + datos[i][PTS]
+            };
+            imprimirFila(celdas, anchos);
         }
         System.out.println(ConsoleColors.CYAN_BOLD_BRIGHT + sep + ConsoleColors.RESET);
     }
 
     /** Muestra la tabla completa paginada con navegacion por teclado. */
-    public void mostrarPaginada(boolean porPuntos) {
+    static void mostrarPaginada(boolean porPuntos) {
         int[] orden = ordenar(porPuntos);
         int pagina = 0;
         int paginas = totalPaginas();
         boolean seguir = true;
         while (seguir) {
-            System.out.println("\n  TABLA DE POSICIONES - " + (porPuntos ? "ordenada por puntos" : "por grupos")
-                    + "  (pagina " + (pagina + 1) + "/" + paginas + ")");
+            String tipo = "por grupos";
+            if (porPuntos) {
+                tipo = "ordenada por puntos";
+            }
+            System.out.println("\n  TABLA DE POSICIONES - " + tipo + "  (pagina " + (pagina + 1) + "/" + paginas + ")");
             imprimirPagina(orden, pagina);
             System.out.print("[S] Siguiente  [A] Anterior  [N] Ir a pagina  [Q] Salir: ");
             String op = ConsoleInput.getString().trim().toUpperCase();
@@ -192,13 +264,7 @@ public class TablaPosiciones {
             } else if (op.equals("A")) {
                 pagina = (pagina - 1 + paginas) % paginas;
             } else if (op.equals("N")) {
-                System.out.print("Numero de pagina (1-" + paginas + "): ");
-                int n = ConsoleInput.getInt();
-                if (n >= 1 && n <= paginas) {
-                    pagina = n - 1;
-                } else {
-                    System.out.println("Pagina invalida.");
-                }
+                pagina = ConsoleInput.leerEntero("Numero de pagina (1-" + paginas + "): ", 1, paginas) - 1;
             } else if (op.equals("Q")) {
                 seguir = false;
             } else {
@@ -208,39 +274,33 @@ public class TablaPosiciones {
     }
 
     // ---------------------------------------------------------------
-    // Persistencia en archivo plano
+    // Archivo plano
     // ---------------------------------------------------------------
 
     /** Guarda: equipo;grupo;PG;PE;PP;GF;GC;TA;TR */
-    public void guardar(String ruta) {
-        List<String> lineas = new ArrayList<>();
-        lineas.add("# equipo;grupo;PG;PE;PP;GF;GC;TA;TR");
-        for (int i = 0; i < equipos.length; i++) {
-            int[] d = datos[i];
-            lineas.add(equipos[i] + ";" + grupos[i] + ";" + d[PG] + ";" + d[PE] + ";" + d[PP] + ";"
-                    + d[GF] + ";" + d[GC] + ";" + d[TA] + ";" + d[TR]);
-        }
+    static void guardar(String ruta) {
         try {
-            Path p = Paths.get(ruta);
-            if (p.getParent() != null) {
-                Files.createDirectories(p.getParent());
+            PrintWriter salida = new PrintWriter(new FileWriter(ruta));
+            salida.println("# equipo;grupo;PG;PE;PP;GF;GC;TA;TR");
+            for (int i = 0; i < total; i++) {
+                salida.println(equipos[i] + ";" + grupos[i] + ";" + datos[i][PG] + ";" + datos[i][PE] + ";"
+                        + datos[i][PP] + ";" + datos[i][GF] + ";" + datos[i][GC] + ";" + datos[i][TA] + ";"
+                        + datos[i][TR]);
             }
-            Files.write(p, lineas, StandardCharsets.UTF_8);
+            salida.close();
         } catch (IOException e) {
             System.out.println("No se pudo guardar la tabla: " + e.getMessage());
         }
     }
 
     /** Carga los valores guardados (si el archivo existe). */
-    public void cargar(String ruta) {
-        Path p = Paths.get(ruta);
-        if (!Files.exists(p)) {
-            return;
-        }
+    static void cargar(String ruta) {
         try {
-            for (String l : Files.readAllLines(p, StandardCharsets.UTF_8)) {
-                String[] t = l.split(";");
-                if (l.startsWith("#") || t.length < 9) {
+            BufferedReader archivo = new BufferedReader(new FileReader(ruta));
+            String linea;
+            while ((linea = archivo.readLine()) != null) {
+                String[] t = linea.split(";");
+                if (linea.startsWith("#") || t.length < 9) {
                     continue;
                 }
                 int i = buscar(t[0]);
@@ -256,10 +316,15 @@ public class TablaPosiciones {
                 datos[i][TR] = Integer.parseInt(t[8].trim());
                 recalcular(i);
             }
-        } catch (IOException | RuntimeException e) {
-            System.out.println("Archivo de tabla invalido, se usan valores en cero: " + e.getMessage());
-            for (int[] fila : datos) {
-                Arrays.fill(fila, 0);
+            archivo.close();
+        } catch (IOException e) {
+            // si el archivo no existe todavia, la tabla empieza en cero
+        } catch (NumberFormatException e) {
+            System.out.println("Archivo de tabla invalido, se usan valores en cero.");
+            for (int i = 0; i < total; i++) {
+                for (int c = 0; c < COLUMNAS.length; c++) {
+                    datos[i][c] = 0;
+                }
             }
         }
     }
