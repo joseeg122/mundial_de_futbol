@@ -1,12 +1,8 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.PrintWriter;
 
 /**
  * Banderas segun el "Estandar para banderas":
@@ -18,12 +14,12 @@ import java.util.List;
  */
 public class Bandera {
 
-    public static final int TOTAL = 48;
-    public static final int FILAS_BANDERA = 10;
-    public static final int COLS_BANDERA = 15;
-    public static final int FILAS_CSV = TOTAL * FILAS_BANDERA;
+    static final int TOTAL = 48;
+    static final int FILAS_BANDERA = 10;
+    static final int COLS_BANDERA = 15;
+    static final int FILAS_CSV = TOTAL * FILAS_BANDERA;
 
-    public static final String[] PAISES = {
+    static final String[] PAISES = {
         "Inglaterra", "Espana", "Francia", "Cabo Verde", "Arabia Saudita",
         "Corea del Sur", "Congo RD", "Ecuador", "Estados Unidos", "Argentina",
         "Brasil", "Canada", "Costa de Marfil", "Jordania", "Alemania",
@@ -50,25 +46,25 @@ public class Bandera {
     };
 
     // Tamanos: {filas, columnas}. Todos mantienen la proporcion 2:3 de la bandera original.
-    public static final String[] TAMANOS = {
+    static final String[] TAMANOS = {
         "Grande (maximo detalle)",
         "Mediano (resolucion intermedia)",
         "Pequeno (baja resolucion)",
         "Icono (miniatura para menus)"
     };
-    public static final int[][] MEDIDAS = {
+    static final int[][] MEDIDAS = {
         {10, 15},  // Grande (tamano original)
         {6, 9},    // Mediano
         {4, 6},    // Pequeno
         {2, 3}     // Icono
     };
-    public static final int ICONO = 3;
+    static final int ICONO = 3;
 
     // ---------------------------------------------------------------
     // Switch de banderas: fila del CSV (desde 1) donde empieza cada pais
     // ---------------------------------------------------------------
 
-    public static int filaInicio(int pais) {
+    static int filaInicio(int pais) {
         int fila = 0;
         switch (pais) {
             case 1:  fila = 61;  break; // Inglaterra
@@ -128,7 +124,7 @@ public class Bandera {
     // ---------------------------------------------------------------
 
     /** Lee el CSV en una matriz char[480][15]. Devuelve null si no se pudo leer. */
-    public static char[][] cargarCSV(String ruta) {
+    static char[][] cargarCSV(String ruta) {
         char[][] matriz = new char[FILAS_CSV][COLS_BANDERA];
         try {
             BufferedReader archivo = new BufferedReader(new FileReader(ruta));
@@ -136,7 +132,7 @@ public class Bandera {
             int fila = 0;
             while ((linea = archivo.readLine()) != null && fila < matriz.length) {
                 if (fila == 0 && linea.startsWith("﻿")) {
-                    linea = linea.substring(1); // algunos editores ponen una marca al inicio del archivo
+                    linea = linea.substring(1); // algunos editores ponen una marca invisible al inicio
                 }
                 String[] columnas = linea.split(";");
                 for (int columna = 0; columna < columnas.length && columna < COLS_BANDERA; columna++) {
@@ -153,17 +149,21 @@ public class Bandera {
         return matriz;
     }
 
-    public static void guardarCSV(String ruta, char[][] matriz) {
-        List<String> lineas = new ArrayList<>();
-        for (int f = 0; f < matriz.length; f++) {
-            String linea = "";
-            for (int c = 0; c < matriz[f].length; c++) {
-                linea = linea + (matriz[f][c] == 0 ? '0' : matriz[f][c]) + ";";
-            }
-            lineas.add(linea);
-        }
+    static void guardarCSV(String ruta, char[][] matriz) {
         try {
-            Files.write(Paths.get(ruta), lineas, StandardCharsets.UTF_8);
+            PrintWriter salida = new PrintWriter(new FileWriter(ruta));
+            for (int f = 0; f < matriz.length; f++) {
+                String linea = "";
+                for (int c = 0; c < matriz[f].length; c++) {
+                    char valor = matriz[f][c];
+                    if (valor == 0) {
+                        valor = '0';
+                    }
+                    linea = linea + valor + ";";
+                }
+                salida.println(linea);
+            }
+            salida.close();
         } catch (IOException e) {
             System.out.println("No se pudo guardar " + ruta + ": " + e.getMessage());
         }
@@ -178,7 +178,7 @@ public class Bandera {
      * Para cada celda del tamano elegido toma la celda del centro del bloque
      * que le corresponde en la bandera original de 10x15.
      */
-    public static void dibujar(String nombre, char[][] matriz, int filaInicio, int tamano) {
+    static void dibujar(String nombre, char[][] matriz, int filaInicio, int tamano) {
         int filasDestino = MEDIDAS[tamano][0];
         int colsDestino = MEDIDAS[tamano][1];
         System.out.println("\n " + nombre + " - " + TAMANOS[tamano] + " [" + filasDestino + "x" + colsDestino + "]");
@@ -198,15 +198,9 @@ public class Bandera {
     }
 
     /** Dibuja la bandera en sus 4 tamanos, uno tras otro. */
-    public static void dibujarTodosLosTamanos(String nombre, char[][] matriz, int filaInicio) {
+    static void dibujarTodosLosTamanos(String nombre, char[][] matriz, int filaInicio) {
         for (int t = 0; t < MEDIDAS.length; t++) {
             dibujar(nombre, matriz, filaInicio, t);
         }
-    }
-
-    /** Quita tildes/mayusculas para comparar nombres ("Países Bajos" == "paises bajos"). */
-    public static String normalizar(String texto) {
-        String t = Normalizer.normalize(texto, Normalizer.Form.NFD);
-        return t.replaceAll("\\p{M}", "").trim().toLowerCase();
     }
 }
