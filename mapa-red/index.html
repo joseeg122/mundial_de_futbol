@@ -1,0 +1,306 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Mapa de red Pan Pa'ya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: plano técnico — mapa nacional a la izquierda, ficha de sede a la derecha, corte del edificio a ancho completo debajo */
+:root{
+  --bg:#eef1f4; --surface:#ffffff; --surface-2:#f5f7f9; --ink:#14202b; --muted:#566573; --line:#c5ced6;
+  --accent:#1f6f8b; --hub:#c47a12; --land:#dde4ea; --land-edge:#9fb0bf; --sea:#e4ebf1;
+  --v10:#2f6fd6; --v20:#8a4fd1; --v30:#c98a0b; --v40:#2b9a5a; --v50:#d0443c; --v60:#8a6a3f; --v80:#4f6273; --v99:#8c98a4; --trunk:#1f6f8b;
+  --font-display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161d; --surface:#16212b; --surface-2:#1b2834; --ink:#e3eaf0; --muted:#9aa9b6; --line:#2d3c4a;
+  --accent:#5fb3cf; --hub:#e8a23c; --land:#1f2d39; --land-edge:#41566a; --sea:#121c25;
+  --v10:#6a9ff0; --v20:#b48af0; --v30:#e7b440; --v40:#5cc98a; --v50:#f07a72; --v60:#c49a68; --v80:#93a6b8; --v99:#76838f; --trunk:#5fb3cf;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f161d; --surface:#16212b; --surface-2:#1b2834; --ink:#e3eaf0; --muted:#9aa9b6; --line:#2d3c4a;
+  --accent:#5fb3cf; --hub:#e8a23c; --land:#1f2d39; --land-edge:#41566a; --sea:#121c25;
+  --v10:#6a9ff0; --v20:#b48af0; --v30:#e7b440; --v40:#5cc98a; --v50:#f07a72; --v60:#c49a68; --v80:#93a6b8; --v99:#76838f; --trunk:#5fb3cf;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 48px;display:grid;gap:22px}
+header h1{font-family:var(--font-display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.05;margin:0;text-wrap:balance;letter-spacing:.2px}
+header p{margin:6px 0 0;color:var(--muted);max-width:68ch}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.top{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:820px){.top{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.map svg{width:100%;height:auto;display:block}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tab{font:500 14px var(--font-body);color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.tab:focus-visible,.city:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.info h2{font-family:var(--font-display);font-size:28px;margin:12px 0 2px;line-height:1.1}
+.info .role{color:var(--muted);margin:0 0 12px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.fact{background:var(--surface-2);border-radius:8px;padding:10px 12px;min-width:0}
+.fact .k{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fact .v{font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.building{overflow-x:auto}
+.building svg{display:block;width:100%;min-width:760px;height:auto}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}
+.legend h3{font-family:var(--font-display);font-size:18px;margin:0 0 8px}
+.legend ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.legend li{display:flex;align-items:center;gap:10px;font-size:14px}
+.legend svg{flex:none}
+.note{color:var(--muted);font-size:13px;margin:0}
+.city{cursor:pointer}
+.city:hover circle.dot{stroke-width:3}
+.dev:hover{opacity:.7}
+.mono{font-family:var(--font-mono)}
+@media (prefers-reduced-motion:no-preference){.building svg g.floor{animation:rise .35s ease both}@keyframes rise{from{transform:translateY(6px)}to{transform:none}}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Redes de Datos · Proyecto final</div>
+    <h1>Mapa de red Pan Pa'ya</h1>
+    <p>Las cinco sedes, sus enlaces y el corte de cada edificio con switches, equipos y cableado. Toca una ciudad o una pestaña; pasa el cursor sobre un equipo para ver su VLAN y velocidad.</p>
+  </header>
+
+  <section class="top">
+    <div class="panel map" aria-label="Mapa nacional">
+      <svg id="map" viewBox="0 0 400 540" role="img" aria-label="Mapa esquemático de Colombia con las cinco sedes"></svg>
+      <p class="note">Mapa esquemático (no a escala exacta). Línea continua: Metro Ethernet a Bogotá. Línea punteada: respaldo IPsec por Internet.</p>
+    </div>
+    <div class="panel info" id="info">
+      <div class="tabs" role="tablist" id="tabs"></div>
+      <h2 id="siteName"></h2>
+      <p class="role" id="siteRole"></p>
+      <div class="facts" id="facts"></div>
+    </div>
+  </section>
+
+  <section class="panel building" aria-label="Corte del edificio">
+    <svg id="bld" role="img" aria-label="Corte del edificio de la sede"></svg>
+  </section>
+
+  <section class="panel legend" id="legend"></section>
+</div>
+
+<script>
+const VL={10:'CORP',20:'TI',30:'POS-PROD',40:'VOZ',50:'VIDEO',60:'IOT',80:'SERVIDORES',99:'GESTIÓN'};
+const TYPES={
+ pc:{name:'PC',def:'1 GbE'}, ws:{name:'Estación 5 GbE',def:'5 GbE mGig'}, pos:{name:'POS / producción',def:'1 GbE'},
+ phone:{name:'Teléfono IP',def:'1 GbE · PoE clase 2'}, printer:{name:'Impresora',def:'1 GbE'}, cam:{name:'Cámara fija',def:'100 Mb/s · PoE 8,9 W'},
+ ptz:{name:'Cámara PTZ',def:'100 Mb/s · PoE 12,95 W'}, vp:{name:'Videoportero',def:'100 Mb/s · PoE 12,95 W'}, acc:{name:'Control de acceso',def:'100 Mb/s · PoE 7 W'},
+ iot:{name:'Sensor IoT',def:'100 Mb/s · PoE 4 W'}, ap:{name:'Access Point U6 Pro',def:'1 GbE trunk · PoE+ 13 W'}, srv:{name:'Servidor',def:'10 GbE'}
+};
+const S={
+ BOG:{name:'Bogotá',role:'Sede principal · hub de servicios',lat:4.71,lon:-74.07,block:'10.20.0.0/20',wan:'Hub 1 Gb/s',inet:'500 Mb/s',router:'2 × FortiGate 100F (HA)',
+  wifi:'35 portátiles · 35 móviles · 10 cámaras · 60 invitados',sw:'2 × 6300M núcleo · 3 × 6200M · 7 × 6100',ap:30,
+  floors:[
+   {n:'Piso 5',a:'Gerencia y centro de datos',rack:['Núcleo 6300M ×2 (VSF)','2 × FortiGate 100F','6100 48G'],g:[
+     {t:'srv',n:5,v:80,l:'Hosts, NAS, NVR, backup',s:'10 GbE / 2×10G LACP'},{t:'pc',n:10,v:10,l:'PC gerencia',s:'1 GbE detrás del teléfono'},{t:'phone',n:10,v:40,l:'Teléfonos'},
+     {t:'printer',n:2,v:10,l:'Impresoras'},{t:'cam',n:4,v:50,l:'Cámaras'},{t:'ptz',n:2,v:50,l:'PTZ'},{t:'vp',n:1,v:50,l:'Videop.'},{t:'acc',n:2,v:60,l:'Accesos'},{t:'iot',n:4,v:60,l:'Sensores'},{t:'ap',n:6,v:0,l:'AP'}]},
+   {n:'Piso 4',a:'Mercadeo, diseño y salas',rack:['6200M (VSF 1/2)','6200M (VSF 2/2)'],g:[
+     {t:'ws',n:12,v:10,l:'Mercadeo / diseño',s:'5 GbE mGig'},{t:'phone',n:10,v:40,l:'Teléfonos'},{t:'printer',n:2,v:10,l:'Impresoras'},{t:'cam',n:4,v:50,l:'Cámaras'},{t:'acc',n:1,v:60,l:'Acceso'},{t:'ap',n:6,v:0,l:'AP'}]},
+   {n:'Piso 3',a:'TI / Ingeniería',rack:['6200M','6100 24G'],g:[
+     {t:'ws',n:6,v:20,l:'TI alto desempeño',s:'5 GbE mGig'},{t:'pc',n:12,v:20,l:'TI estándar'},{t:'phone',n:10,v:40,l:'Teléfonos'},{t:'printer',n:1,v:10,l:'Impr.'},
+     {t:'cam',n:4,v:50,l:'Cámaras'},{t:'vp',n:1,v:50,l:'Videop.'},{t:'acc',n:2,v:60,l:'Accesos'},{t:'iot',n:2,v:60,l:'Sensores'},{t:'ap',n:6,v:0,l:'AP'}]},
+   {n:'Piso 2',a:'Administración, contabilidad, talento humano',rack:['6100 48G','6100 24G'],g:[
+     {t:'pc',n:40,v:10,l:'PC administrativos',s:'1 GbE (32 detrás del teléfono)'},{t:'phone',n:32,v:40,l:'Teléfonos'},{t:'printer',n:3,v:10,l:'Impresoras'},{t:'cam',n:4,v:50,l:'Cámaras'},{t:'acc',n:1,v:60,l:'Acceso'},{t:'ap',n:6,v:0,l:'AP'}]},
+   {n:'Piso 1',a:'Recepción, producción y seguridad',rack:['6100 48G (A)','6100 48G (B)','6100 24G (C)'],g:[
+     {t:'pos',n:30,v:30,l:'POS / producción'},{t:'pc',n:5,v:10,l:'PC recepción y seguridad'},{t:'phone',n:8,v:40,l:'Teléfonos'},{t:'printer',n:4,v:10,l:'Etiquetas'},
+     {t:'cam',n:12,v:50,l:'Cámaras fijas'},{t:'ptz',n:4,v:50,l:'PTZ'},{t:'vp',n:4,v:50,l:'Videoporteros'},{t:'acc',n:4,v:60,l:'Accesos'},{t:'iot',n:12,v:60,l:'Sensores hornos/frío'},{t:'ap',n:6,v:0,l:'AP'}]}
+  ]},
+ MED:{name:'Medellín',role:'Sede regional · 2 pisos de 550 m²',lat:6.24,lon:-75.58,block:'10.20.16.0/20',wan:'400 Mb/s',inet:'200 Mb/s',router:'FortiGate 61F',
+  wifi:'15 portátiles · 15 móviles · 5 cámaras · 25 invitados',sw:'6200M · 6100 48G · 6100 24G',ap:8,
+  floors:[
+   {n:'Piso 2',a:'Administración, TI y mercadeo',rack:['FortiGate 61F','6200M (SW-MED-1)'],g:[
+     {t:'ws',n:6,v:10,l:'TI alto + mercadeo',s:'5 GbE mGig'},{t:'pc',n:4,v:20,l:'TI estándar'},{t:'pc',n:18,v:10,l:'PC administrativos',s:'1 GbE detrás del teléfono'},{t:'phone',n:18,v:40,l:'Teléfonos'},{t:'printer',n:3,v:10,l:'Impr.'},{t:'ap',n:4,v:0,l:'AP'}]},
+   {n:'Piso 1',a:'Producción, ventas y seguridad',rack:['6100 48G (SW-MED-2)','6100 24G (SW-MED-3)','NVR regional'],g:[
+     {t:'pos',n:12,v:30,l:'POS / producción'},{t:'phone',n:7,v:40,l:'Teléfonos'},{t:'printer',n:2,v:10,l:'Impr.'},{t:'cam',n:12,v:50,l:'Cámaras'},{t:'ptz',n:2,v:50,l:'PTZ'},{t:'vp',n:2,v:50,l:'Videop.'},{t:'acc',n:4,v:60,l:'Accesos'},{t:'iot',n:8,v:60,l:'Sensores'},{t:'ap',n:4,v:0,l:'AP'}]}
+  ]},
+ CAL:{name:'Cali',role:'Sede regional · 2 pisos de 500 m²',lat:3.45,lon:-76.53,block:'10.20.32.0/20',wan:'400 Mb/s',inet:'200 Mb/s',router:'FortiGate 61F',
+  wifi:'12 portátiles · 12 móviles · 4 cámaras · 20 invitados',sw:'6200M · 6100 48G',ap:8,
+  floors:[
+   {n:'Piso 2',a:'Administración',rack:['FortiGate 61F','6200M (SW-CAL-1)'],g:[
+     {t:'ws',n:4,v:10,l:'TI alto + mercadeo',s:'5 GbE mGig'},{t:'pc',n:3,v:20,l:'TI'},{t:'pc',n:15,v:10,l:'PC administrativos',s:'1 GbE detrás del teléfono'},{t:'phone',n:15,v:40,l:'Teléfonos'},{t:'printer',n:4,v:10,l:'Impr.'},{t:'acc',n:4,v:60,l:'Accesos'},{t:'iot',n:6,v:60,l:'Sensores'},{t:'ap',n:4,v:0,l:'AP'}]},
+   {n:'Piso 1',a:'Producción, ventas y seguridad',rack:['6100 48G (SW-CAL-2)','NVR regional'],g:[
+     {t:'pos',n:10,v:30,l:'POS / producción'},{t:'phone',n:7,v:40,l:'Teléfonos'},{t:'cam',n:10,v:50,l:'Cámaras'},{t:'ptz',n:2,v:50,l:'PTZ'},{t:'vp',n:2,v:50,l:'Videop.'},{t:'ap',n:4,v:0,l:'AP'}]}
+  ]},
+ BAQ:{name:'Barranquilla',role:'Sede regional · 1 piso de 650 m²',lat:10.96,lon:-74.80,block:'10.20.48.0/20',wan:'300 Mb/s',inet:'100 Mb/s',router:'FortiGate 61F',
+  wifi:'10 portátiles · 10 móviles · 3 cámaras · 15 invitados',sw:'6200M · 6100 24G',ap:5,
+  floors:[
+   {n:'Piso 1',a:'Administración, producción, ventas y seguridad',rack:['FortiGate 61F','6200M (SW-BAQ-1)','6100 24G (SW-BAQ-2)','NVR regional'],g:[
+     {t:'ws',n:2,v:10,l:'Mercadeo',s:'5 GbE mGig'},{t:'pc',n:2,v:20,l:'TI'},{t:'pc',n:12,v:10,l:'PC administrativos',s:'1 GbE detrás del teléfono'},{t:'phone',n:18,v:40,l:'Teléfonos'},{t:'printer',n:3,v:10,l:'Impr.'},
+     {t:'pos',n:8,v:30,l:'POS'},{t:'cam',n:8,v:50,l:'Cámaras'},{t:'ptz',n:1,v:50,l:'PTZ'},{t:'vp',n:2,v:50,l:'Videop.'},{t:'acc',n:3,v:60,l:'Accesos'},{t:'iot',n:5,v:60,l:'Sensores'},{t:'ap',n:5,v:0,l:'AP'}]}
+  ]},
+ BUC:{name:'Bucaramanga',role:'Sede regional · 1 piso de 500 m²',lat:7.12,lon:-73.12,block:'10.20.64.0/20',wan:'300 Mb/s',inet:'100 Mb/s',router:'FortiGate 61F',
+  wifi:'8 portátiles · 8 móviles · 3 cámaras · 12 invitados',sw:'6200M · 6100 24G',ap:4,
+  floors:[
+   {n:'Piso 1',a:'Administración, producción, ventas y seguridad',rack:['FortiGate 61F','6200M (SW-BUC-1)','6100 24G (SW-BUC-2)','NVR regional'],g:[
+     {t:'ws',n:2,v:10,l:'Mercadeo',s:'5 GbE mGig'},{t:'pc',n:2,v:20,l:'TI'},{t:'pc',n:10,v:10,l:'PC administrativos',s:'1 GbE detrás del teléfono'},{t:'phone',n:15,v:40,l:'Teléfonos'},{t:'printer',n:3,v:10,l:'Impr.'},
+     {t:'pos',n:6,v:30,l:'POS'},{t:'cam',n:6,v:50,l:'Cámaras'},{t:'ptz',n:1,v:50,l:'PTZ'},{t:'vp',n:1,v:50,l:'Videop.'},{t:'acc',n:2,v:60,l:'Accesos'},{t:'iot',n:4,v:60,l:'Sensores'},{t:'ap',n:4,v:0,l:'AP'}]}
+  ]}
+};
+const ORDER=['BOG','MED','CAL','BAQ','BUC'];
+const NS='http://www.w3.org/2000/svg';
+const el=(tag,attrs={},parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;};
+const txt=(parent,x,y,s,attrs={})=>{const t=el('text',Object.assign({x,y},attrs),parent);t.textContent=s;return t;};
+const vcol=v=>v===0?'var(--trunk)':`var(--v${v})`;
+
+/* ---------- ICONOS (16×16, origen arriba-izquierda) ---------- */
+function icon(g,t,x,y,c){
+  const s={fill:'none',stroke:c,'stroke-width':1.4,'stroke-linejoin':'round'};
+  const f={fill:c,stroke:'none'};
+  const G=el('g',{transform:`translate(${x},${y})`},g);
+  if(t==='pc'||t==='ws'){el('rect',Object.assign({x:1,y:2,width:14,height:9,rx:1.5},s),G);el('path',Object.assign({d:'M6 14h4M8 11v3'},s),G);if(t==='ws')el('rect',Object.assign({x:3,y:4,width:10,height:5},f),G);}
+  else if(t==='pos'){el('rect',Object.assign({x:2,y:7,width:12,height:7,rx:1},s),G);el('rect',Object.assign({x:4,y:2,width:8,height:4,rx:1},s),G);el('path',Object.assign({d:'M5 10h6'},s),G);}
+  else if(t==='phone'){el('rect',Object.assign({x:3,y:4,width:10,height:10,rx:1.5},s),G);el('path',Object.assign({d:'M2 4c0-2 12-2 12 0'},s),G);el('rect',Object.assign({x:6,y:6,width:4,height:2},f),G);}
+  else if(t==='printer'){el('rect',Object.assign({x:1,y:6,width:14,height:6,rx:1},s),G);el('path',Object.assign({d:'M4 6V2h8v4M4 12v3h8v-3'},s),G);}
+  else if(t==='cam'){el('path',Object.assign({d:'M2 4h12M3 4a5 5 0 0 0 10 0'},s),G);el('circle',Object.assign({cx:8,cy:6.5,r:1.6},f),G);}
+  else if(t==='ptz'){el('path',Object.assign({d:'M8 1v3M3 4h10'},s),G);el('circle',Object.assign({cx:8,cy:9,r:5},s),G);el('circle',Object.assign({cx:8,cy:9,r:1.8},f),G);}
+  else if(t==='vp'){el('rect',Object.assign({x:4,y:1,width:8,height:14,rx:1.5},s),G);el('circle',Object.assign({cx:8,cy:4.5,r:1.3},f),G);el('path',Object.assign({d:'M6 9h4M6 11.5h4'},s),G);}
+  else if(t==='acc'){el('rect',Object.assign({x:3,y:1,width:10,height:14,rx:1.5},s),G);for(let r=0;r<3;r++)for(let q=0;q<2;q++)el('circle',Object.assign({cx:6+q*4,cy:5+r*3,r:.9},f),G);}
+  else if(t==='iot'){el('circle',Object.assign({cx:8,cy:8,r:3},s),G);el('circle',Object.assign({cx:8,cy:8,r:1},f),G);el('path',Object.assign({d:'M3 3a7 7 0 0 0 0 10M13 3a7 7 0 0 1 0 10'},s),G);}
+  else if(t==='ap'){el('circle',Object.assign({cx:8,cy:11,r:2},f),G);el('path',Object.assign({d:'M4 8a5.5 5.5 0 0 1 8 0M1.5 5.5a9 9 0 0 1 13 0'},s),G);}
+  else if(t==='srv'){el('rect',Object.assign({x:1,y:1,width:14,height:14,rx:1.5},s),G);el('path',Object.assign({d:'M1 6h14M1 10.5h14'},s),G);el('circle',Object.assign({cx:12,cy:3.5,r:.9},f),G);el('circle',Object.assign({cx:12,cy:8.2,r:.9},f),G);}
+  return G;
+}
+
+/* ---------- MAPA ---------- */
+const COL=[[-77.0,8.6],[-76.2,9.4],[-75.6,10.3],[-74.9,11.0],[-74.2,11.3],[-73.2,11.4],[-72.1,12.1],[-71.6,12.45],[-71.1,12.0],[-71.4,11.5],[-72.2,11.1],[-72.6,10.4],[-73.0,9.4],[-72.6,8.2],[-72.4,7.4],[-71.2,7.0],[-70.1,6.95],[-69.4,6.1],[-67.5,6.2],[-67.85,5.3],[-67.6,4.0],[-67.3,2.4],[-67.0,1.2],[-67.9,1.8],[-69.8,1.7],[-69.4,0.6],[-70.0,0.0],[-69.5,-1.0],[-69.9,-4.2],[-70.7,-3.8],[-71.8,-2.2],[-73.1,-1.2],[-74.3,-0.3],[-75.3,-0.15],[-77.0,0.4],[-78.0,1.2],[-78.85,1.65],[-78.6,2.4],[-77.7,2.7],[-77.3,3.9],[-77.4,5.0],[-77.4,6.6],[-77.9,7.2],[-77.4,8.4]];
+const P=(lon,lat)=>[ (lon+79.5)*30.2+5, (12.9-lat)*30.2+5 ];
+function drawMap(){
+  const m=document.getElementById('map');m.innerHTML='';
+  el('rect',{x:0,y:0,width:400,height:540,fill:'var(--sea)',rx:8},m);
+  el('polygon',{points:COL.map(p=>P(...p).join(',')).join(' '),fill:'var(--land)',stroke:'var(--land-edge)','stroke-width':1.2},m);
+  txt(m,232,300,'COLOMBIA',{fill:'var(--muted)','font-family':'var(--font-mono)','font-size':11,'letter-spacing':'3'});
+  txt(m,20,40,'Mar Caribe',{fill:'var(--muted)','font-size':11,'font-style':'italic'});
+  txt(m,14,330,'Océano',{fill:'var(--muted)','font-size':11,'font-style':'italic'});
+  txt(m,14,344,'Pacífico',{fill:'var(--muted)','font-size':11,'font-style':'italic'});
+  const b=P(S.BOG.lon,S.BOG.lat);
+  ORDER.slice(1).forEach(k=>{const c=P(S[k].lon,S[k].lat);
+    el('line',{x1:b[0],y1:b[1],x2:c[0],y2:c[1],stroke:'var(--accent)','stroke-width':2.2},m);
+    const f=k==='BAQ'?0.55:(k==='MED'?0.5:0.72); const oy=k==='MED'?18:0; const mx=b[0]+(c[0]-b[0])*f,my=b[1]+(c[1]-b[1])*f;
+    const lb=el('g',{},m);
+    el('rect',{x:mx-30,y:my-9+oy,width:60,height:17,rx:4,fill:'var(--surface)',stroke:'var(--line)'},lb);
+    txt(lb,mx,my+4+oy,S[k].wan,{'text-anchor':'middle','font-size':10.5,fill:'var(--ink)','font-family':'var(--font-mono)'});
+  });
+  ORDER.forEach(k=>{const c=P(S[k].lon,S[k].lat);const hub=k==='BOG';
+    const g=el('g',{class:'city',tabindex:0,role:'button','aria-label':'Ver sede '+S[k].name},m);
+    el('circle',{class:'dot',cx:c[0],cy:c[1],r:hub?10:7,fill:hub?'var(--hub)':'var(--surface)',stroke:hub?'var(--hub)':'var(--accent)','stroke-width':2},g);
+    if(k===cur)el('circle',{cx:c[0],cy:c[1],r:hub?16:13,fill:'none',stroke:'var(--ink)','stroke-width':1.5,'stroke-dasharray':'3 3'},g);
+    const left=(k==='CAL'||k==='MED'); const dx= left?-12:12, anc=left?'end':'start'; const dy=k==='MED'?-14:(k==='BOG'?12:0);
+    txt(g,c[0]+dx,c[1]-4+dy,S[k].name,{fill:'var(--ink)','font-weight':600,'font-size':13,'text-anchor':anc});
+    txt(g,c[0]+dx,c[1]+11+dy,S[k].block,{fill:'var(--muted)','font-size':10.5,'font-family':'var(--font-mono)','text-anchor':anc});
+    g.addEventListener('click',()=>select(k));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();select(k);}});
+  });
+}
+
+/* ---------- EDIFICIO ---------- */
+function drawBuilding(k){
+  const s=S[k], svg=document.getElementById('bld'); svg.innerHTML='';
+  const W=1000, X0=44, RX=60, RW=215, DX=318, DXEND=975, CELL=20, MAXC=12;
+  let y=70;
+  const floorsG=[];
+  // roof / título
+  const head=el('g',{},svg);
+  txt(head,24,30,`Edificio ${s.name} · corte por pisos`,{fill:'var(--ink)','font-family':'var(--font-display)','font-size':22,'font-weight':700});
+  txt(head,24,52,`${s.floors.length} ${s.floors.length>1?'pisos':'piso'} · ${s.sw} · ${s.ap} AP · Wi-Fi: ${s.wifi}`,{fill:'var(--muted)','font-size':12.5});
+  const rackPos=[];
+  s.floors.forEach((fl,fi)=>{
+    const top=y; const G=el('g',{class:'floor'},svg);
+    // layout de grupos
+    let cx=DX, cy=top+56, rowH=0; const placed=[];
+    fl.g.forEach(gr=>{const cols=Math.min(gr.n,MAXC), rows=Math.ceil(gr.n/MAXC);
+      const lab=(gr.n+' '+gr.l).length*6.3+10; const w=Math.max(cols*CELL, lab), h=26+rows*CELL;
+      if(cx+w>DXEND){cx=DX;cy+=rowH+16;rowH=0;}
+      placed.push({gr,x:cx,y:cy,cols,rows,w,h}); cx+=w+22; rowH=Math.max(rowH,h);});
+    const devBottom=cy+rowH;
+    const rackH=fl.rack.length*30;
+    const bottom=Math.max(devBottom, top+56+rackH)+18;
+    // banda del piso
+    el('rect',{x:X0,y:top,width:W-X0-16,height:bottom-top,rx:8,fill:'var(--surface-2)',stroke:'var(--line)'},G);
+    txt(G,X0+14,top+22,fl.n,{fill:'var(--ink)','font-family':'var(--font-display)','font-size':18,'font-weight':700});
+    txt(G,X0+80,top+22,fl.a,{fill:'var(--muted)','font-size':12.5});
+    // bandeja principal de cable
+    const trayY=top+40;
+    el('line',{x1:RX+RW,y1:trayY,x2:DXEND,y2:trayY,stroke:'var(--muted)','stroke-width':3,'stroke-linecap':'round',opacity:.55},G);
+    txt(G,DXEND,trayY-6,'bandeja de cableado UTP',{fill:'var(--muted)','font-size':10,'text-anchor':'end','font-family':'var(--font-mono)'});
+    // rack
+    fl.rack.forEach((r,i)=>{const ry=top+56+i*30;
+      const isFw=/FortiGate/.test(r), isNvr=/NVR/.test(r), isCore=/Núcleo/.test(r);
+      const R=el('g',{},G);
+      el('rect',{x:RX,y:ry,width:RW,height:22,rx:3,fill:isCore?'var(--hub)':'var(--surface)',stroke:isFw?'var(--v50)':isNvr?'var(--v50)':'var(--ink)','stroke-width':1.2,'fill-opacity':isCore?.18:1},R);
+      if(!isFw&&!isNvr&&!isCore) for(let p=0;p<12;p++) el('rect',{x:RX+RW-40+p*2.8,y:ry+16,width:2,height:3,fill:'var(--muted)'},R);
+      txt(R,RX+8,ry+14,r,{fill:'var(--ink)','font-size':11.5,'font-weight':500});
+      const tt=el('title',{},R); tt.textContent=isFw?'Router / firewall: gateway, OSPF, WAN e Internet':isNvr?'Grabador local · VLAN 50':isCore?'Gateways (SVI) de las VLAN · uplinks 10 GbE':'Switch de acceso · uplink 2 × 10 GbE LACP';
+    });
+    el('line',{x1:RX+RW,y1:top+56+11,x2:RX+RW,y2:trayY,stroke:'var(--muted)','stroke-width':3,opacity:.55},G);
+    rackPos.push({y:top+56+11, top, bottom});
+    // bandejas por fila
+    const rowYs=[...new Set(placed.map(p=>p.y))];
+    el('line',{x1:DX-14,y1:trayY,x2:DX-14,y2:rowYs.at(-1)-4,stroke:'var(--muted)','stroke-width':3,opacity:.55},G);
+    rowYs.forEach(ry=>el('line',{x1:DX-14,y1:ry-4,x2:DXEND,y2:ry-4,stroke:'var(--muted)','stroke-width':2,opacity:.35},G));
+    // grupos de equipos con cables
+    placed.forEach(p=>{const {gr}=p; const c=vcol(gr.v);
+      const GG=el('g',{class:'dev'},G);
+      const t=el('title',{},GG); t.textContent=`${gr.n} × ${TYPES[gr.t].name} — ${gr.l}\n${gr.v?('VLAN '+gr.v+' '+VL[gr.v]):'Trunk 802.1Q: nativa 99 + VLAN 10/50/70'}\n${gr.s||TYPES[gr.t].def}`;
+      txt(GG,p.x,p.y+10,`${gr.n} ${gr.l}`,{fill:'var(--ink)','font-size':11,'font-weight':500});
+      const busY=p.y+16;
+      el('line',{x1:p.x-4,y1:p.y-4,x2:p.x-4,y2:busY,stroke:c,'stroke-width':1.6,'stroke-dasharray':gr.v===0?'4 2':'none'},GG);
+      el('line',{x1:p.x-4,y1:busY,x2:p.x+p.cols*CELL-6,y2:busY,stroke:c,'stroke-width':1.6,'stroke-dasharray':gr.v===0?'4 2':'none'},GG);
+      for(let i=0;i<gr.n;i++){const col=i%MAXC,row=Math.floor(i/MAXC);
+        const ix=p.x+col*CELL, iy=p.y+24+row*CELL;
+        el('line',{x1:ix-2,y1:busY,x2:ix-2,y2:iy+8,stroke:c,'stroke-width':.9,opacity:.75},GG);
+        icon(GG,gr.t,ix,iy,c);}
+    });
+    y=bottom+14;
+  });
+  // riser vertical (fibra entre pisos)
+  if(rackPos.length>1){
+    const R=el('g',{},svg);
+    const yTop=rackPos[0].y, yBot=rackPos[rackPos.length-1].y;
+    el('line',{x1:24,y1:yTop,x2:24,y2:yBot,stroke:'var(--accent)','stroke-width':3},R);
+    rackPos.forEach(r=>el('line',{x1:24,y1:r.y,x2:RX,y2:r.y,stroke:'var(--accent)','stroke-width':3},R));
+    const t=el('text',{x:16,y:(yTop+yBot)/2,fill:'var(--accent)','font-size':11,'font-family':'var(--font-mono)','text-anchor':'middle',transform:`rotate(-90 16 ${(yTop+yBot)/2})`},R);
+    t.textContent= k==='BOG'?'Montante: 2 × 10 GbE LACP de cada piso al núcleo':'Montante: 2 × 10 GbE LACP al 6200M';
+  }
+  // suelo
+  el('line',{x1:16,y1:y-4,x2:W-10,y2:y-4,stroke:'var(--ink)','stroke-width':2},svg);
+  txt(svg,W-12,y+14,`WAN ${s.wan} · Internet ${s.inet} · bloque ${s.block}`,{fill:'var(--muted)','font-size':11.5,'text-anchor':'end','font-family':'var(--font-mono)'});
+  svg.setAttribute('viewBox',`0 0 ${W} ${y+26}`);
+  svg.setAttribute('aria-label',`Corte del edificio de ${s.name}`);
+}
+
+/* ---------- FICHA ---------- */
+function drawInfo(k){
+  const s=S[k];
+  document.getElementById('siteName').textContent=s.name;
+  document.getElementById('siteRole').textContent=s.role;
+  const n=s.floors.reduce((a,f)=>a+f.g.filter(g=>g.t!=='ap'&&g.t!=='srv').reduce((b,g)=>b+g.n,0),0);
+  const facts=[['Router / firewall',s.router],['Enlace a Bogotá',k==='BOG'?'Recibe las 4 regionales':s.wan+' Metro Ethernet'],['Internet local',s.inet],['Bloque IPv4',s.block],['Switches',s.sw],['Equipos cableados',n+' + '+s.ap+' AP'],['Clientes Wi-Fi',s.wifi]];
+  document.getElementById('facts').innerHTML=facts.map(([a,b])=>`<div class="fact"><div class="k">${a}</div><div class="v">${b}</div></div>`).join('');
+  document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.k===k?'true':'false'));
+}
+function drawLegend(){
+  const L=document.getElementById('legend');
+  const dev=['pc','ws','pos','phone','printer','cam','ptz','vp','acc','iot','ap','srv'];
+  const ic=t=>{const sv=document.createElementNS(NS,'svg');sv.setAttribute('width',20);sv.setAttribute('height',20);sv.setAttribute('viewBox','-2 -2 20 20');icon(sv,t,0,0,'var(--ink)');return sv.outerHTML;};
+  const vl=[10,20,30,40,50,60,80];
+  L.innerHTML=`<div><h3>Equipos</h3><ul>${dev.map(t=>`<li>${ic(t)}<span>${TYPES[t].name} <span class="mono" style="color:var(--muted);font-size:12px">· ${TYPES[t].def}</span></span></li>`).join('')}</ul></div>
+  <div><h3>Color del cable = VLAN</h3><ul>${vl.map(v=>`<li><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="var(--v${v})" stroke-width="3"/></svg><span>VLAN ${v} · ${VL[v]}</span></li>`).join('')}
+  <li><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="var(--trunk)" stroke-width="3" stroke-dasharray="5 3"/></svg><span>Trunk del AP (nativa 99 + VLAN 10/50/70)</span></li>
+  <li><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="var(--accent)" stroke-width="4"/></svg><span>Montante de fibra 2 × 10 GbE (LACP)</span></li></ul></div>
+  <div><h3>Cómo leer el corte</h3><p class="note">Cada piso tiene su rack a la izquierda. Del rack sale la bandeja de cableado y de ella baja un cable por equipo, coloreado según su VLAN. Los PC administrativos comparten el cable con el teléfono IP (switch interno de 2 puertos del Cisco 8841). En Bogotá cada piso sube al núcleo del piso 5 por el montante; en las regionales, al 6200M. Las cantidades salen de la tabla A1 del documento de diseño.</p></div>`;
+}
+let cur='BOG';
+function select(k){cur=k;drawInfo(k);drawBuilding(k);drawMap();try{localStorage.setItem('ppy-sede',k)}catch(e){}}
+document.getElementById('tabs').innerHTML=ORDER.map(k=>`<button class="tab" role="tab" data-k="${k}">${S[k].name}</button>`).join('');
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>select(b.dataset.k)));
+drawLegend();
+let start='BOG';try{const v=localStorage.getItem('ppy-sede');if(v&&S[v])start=v;}catch(e){}
+select(start);
+</script>
+
+</body></html>
