@@ -10,6 +10,7 @@ public class Mundial {
     static final String ARCHIVO_EQUIPOS = DIR + "equipos.txt";
     static final String ARCHIVO_TABLA = DIR + "tabla_posiciones.txt";
     static final String ARCHIVO_PARTIDOS = DIR + "partidos.txt";
+    static final String ARCHIVO_PAISES = DIR + "paises.txt";
 
     static final String[] BANNER_MUNDIAL = {
         " __  __ _   _ _   _ ____ ___    _    _",
@@ -47,6 +48,7 @@ public class Mundial {
         "Registrar resultado de un partido",
         "Editar datos de la tabla",
         "Importar banderas de otro archivo (CSV)",
+        "Informacion de un pais (ficha)",
     };
 
     static char[][] banderas; // matriz 480 x 15 leida de Flags.csv (48 banderas de 10 x 15)
@@ -86,6 +88,10 @@ public class Mundial {
                     break;
                 case 8:
                     importarBanderas();
+                    break;
+                case 9:
+                    Paises.listar();
+                    Paises.mostrar(ConsoleInput.leerEntero("  Elige un pais (1-" + Paises.total + "): ", 1, Paises.total));
                     break;
             }
         } while (opcion != 0);
@@ -141,6 +147,10 @@ public class Mundial {
             return false;
         }
         TablaPosiciones.cargar(ARCHIVO_TABLA);
+
+        if (!Paises.cargar(ARCHIVO_PAISES)) {
+            return false;
+        }
 
         // Fixture
         if (!Fixture.cargar(ARCHIVO_PARTIDOS)) {
